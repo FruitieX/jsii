@@ -83,9 +83,22 @@ var openChan = function(filePath) {
 		// separator takes up 1 char + whitespace
 		var availWidth = process.stdout.columns - maxNickLen - 2;
 
-		// TODO: wrap at whitespace
-		for (var i = 0; i < Math.ceil(line.length / availWidth); i++) {
-			var curLine = line.substr(i * availWidth, availWidth);
+		var wrappedChars = 0;
+		var i = 0;
+
+		while(i * availWidth - wrappedChars < line.length) {
+			var start = i * availWidth - wrappedChars;
+			var curLine = line.substr(start, availWidth);
+			// remove leading space on next line
+			curLine.replace(/^\s+/, '');
+			// line wrap at word boundary only if there is whitespace on this line
+			if(start + availWidth < line.length && curLine.lastIndexOf(' ') !== -1) {
+				curLine = curLine.slice(0, curLine.lastIndexOf(' '));
+				// remove whitespace
+				wrappedChars--;
+			}
+
+			wrappedChars += availWidth - curLine.length;
 
 			// empty space on line wrap
 			if (i > 0)
@@ -93,6 +106,7 @@ var openChan = function(filePath) {
 
 			process.stdout.write(clc.xterm(textColor)(curLine));
 			process.stdout.write('\n');
+			i++;
 		}
 
 		// print channel name again
