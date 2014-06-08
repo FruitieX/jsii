@@ -2,6 +2,15 @@ var clc = require('cli-color');
 var maxNickLen = 12;
 var fileBuf = 4096; // how many characters of file to remember
 var path = require('path');
+var myNick = "FruitieX";
+var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
+var ansi_escape_re = /\x1b[^m]*m/;
+
+var numColor = clc.xterm(232).bgXterm(255);
+var chanColor = clc.xterm(255).bgXterm(239);
+var barColor = clc.xterm(239);
+var myNickColor = 1;
+var hilightColor = 3;
 
 // we need this in global scope so we can remove the event listeners!
 var out;
@@ -12,12 +21,14 @@ var openChan = function(filePath) {
 
 	var bn = path.basename(filePath);
 	var num_s = ' ' + bn.substring(0, bn.indexOf('_')) + ' ';
-	var num = clc.xterm(232).bgXterm(255)(num_s);
+	var num = numColor(num_s);
 	var chan_s = ' ' + bn.substring(bn.indexOf('_') + 1, bn.length) + ' ';
-	var chan = clc.xterm(255).bgXterm(239)(chan_s);
-	var bar = clc.xterm(239)('│');
+	var chan = chanColor(chan_s);
+	var bar = barColor('│');
 
 	var printLine = function(line) {
+		var hilight = false;
+
 		// clear channel name
 		process.stdout.write('\r' + Array(num_s.length + chan_s.length + 1).join(' ') + '\r');
 
@@ -27,23 +38,28 @@ var openChan = function(filePath) {
 		// remove <> around nick
 		var nick = line[0].substring(1, line[0].length - 1);
 
-		// nick color, avoids dark colors
-		var clrnick = 0;
-		for(var i = 0; i < nick.length; i++) {
-			clrnick += nick.charCodeAt(i);
+		if(nick === myNick) {
+			clrnick = myNickColor;
+		} else {
+			// nick color, avoids dark colors
+			var clrnick = 0;
+			for(var i = 0; i < nick.length; i++) {
+				clrnick += nick.charCodeAt(i);
+			}
+			clrnick = Math.pow(clrnick, 2) + clrnick * 2;
+			clrnick = clrnick % 255;
+			switch(clrnick) {
+				case 18: case 22: case 23: case 24:
+					clrnick += 3; break;
+				case 52: case 53: case 54: case 55: case 56: case 57: case 88: case 89:
+					clrnick += 6; break;
+				case 232: case 233: case 234: case 235: case 236: case 237: case 238: case 239:
+					clrnick += 8; break;
+				case 0: case 8: case 19: case 22:
+					clrnick++; break;
+			}
 		}
-		clrnick = Math.pow(clrnick, 2) + clrnick * 2;
-		clrnick = clrnick % 255;
-		switch(clrnick) {
-			case 18: case 22: case 23: case 24:
-				clrnick += 3; break;
-			case 52: case 53: case 54: case 55: case 56: case 57: case 88: case 89:
-				clrnick += 6; break;
-			case 232: case 233: case 234: case 235: case 236: case 237: case 238: case 239:
-				clrnick += 8; break;
-			case 0: case 8: case 19: case 22:
-				clrnick++; break;
-		}
+
 		// limit nicklen
 		nick = nick.substr(0, maxNickLen);
 		// align nicks
@@ -56,11 +72,21 @@ var openChan = function(filePath) {
 		// remove nick from line array, now contains space separated text message
 		line.shift();
 
-		// TODO: wrap at whitespace
-		var ansi_escape = /\x1b[^m]*m/;
 		for (var i = 0; i < line.length; i++) {
-			line[i] = line[i].replace(ansi_escape, '');
-			process.stdout.write(line[i]);
+			if(line[i].match(hilight_re))
+				hilight = true;
+		}
+
+		var textColor = 15;
+		if (nick === myNick)
+			textColor = myNickColor;
+		else if (hilight)
+			textColor = hilightColor;
+
+		// TODO: wrap at whitespace
+		for (var i = 0; i < line.length; i++) {
+			line[i] = line[i].replace(ansi_escape_re, '');
+			process.stdout.write(clc.xterm(textColor)(line[i]));
 			if(i != line.length - 1)
 				process.stdout.write(' ');
 		}
