@@ -20,8 +20,12 @@ var openChan = function(filePath) {
 	var file = require('fs').readFileSync(outFile, 'utf8');
 
 	var bn = path.basename(filePath);
-	var num_s = ' ' + bn.substring(0, bn.indexOf('_')) + ' ';
-	var num = numColor(num_s);
+	var num_s = bn.substring(0, bn.indexOf('_'));
+	var num = "";
+	if(num_s !== "") {
+		num_s = ' ' + num_s + ' ';
+		num = numColor(num_s);
+	}
 	var chan_s = ' ' + bn.substring(bn.indexOf('_') + 1, bn.length) + ' ';
 	var chan = chanColor(chan_s);
 
