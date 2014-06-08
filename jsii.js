@@ -56,7 +56,9 @@ var openChan = function(filePath) {
 		line.shift();
 
 		// TODO: wrap at whitespace
+		var ansi_escape = /\x1b[^m]*m/;
 		for (var i = 0; i < line.length; i++) {
+			line[i] = line[i].replace(ansi_escape, '');
 			process.stdout.write(line[i]);
 			if(i != line.length - 1)
 				process.stdout.write(' ');
