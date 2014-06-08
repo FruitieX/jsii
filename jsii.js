@@ -88,6 +88,17 @@ var openChan = function(filePath) {
 		file = file.substr(file.indexOf("\n") + 1, file.length);
 	}
 
+	// set raw mode
+	var stdin = process.stdin;
+	stdin.setRawMode(true);
+	stdin.resume();
+	stdin.setEncoding('utf8');
+
+	// handle 'q', 'ctrl-c' by quitting
+	stdin.on('data', function(key) {
+		if(key == 'q' || key == '\u0003') process.exit();
+	});
+
 	// clear terminal and print
 	process.stdout.write('\u001B[2J\u001B[0;0f');
 	printFile(file);
