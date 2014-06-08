@@ -6,9 +6,9 @@ var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
 var ansi_escape_re = /\x1b[^m]*m/;
 
+var separatorColor = clc.xterm(239);
 var numColor = clc.xterm(232).bgXterm(255);
 var chanColor = clc.xterm(255).bgXterm(239);
-var barColor = clc.xterm(239);
 var myNickColor = 1;
 var hilightColor = 3;
 
@@ -24,7 +24,6 @@ var openChan = function(filePath) {
 	var num = numColor(num_s);
 	var chan_s = ' ' + bn.substring(bn.indexOf('_') + 1, bn.length) + ' ';
 	var chan = chanColor(chan_s);
-	var bar = barColor('│');
 
 	var printLine = function(line) {
 		var hilight = false;
@@ -64,9 +63,7 @@ var openChan = function(filePath) {
 		nick = nick.substr(0, maxNickLen);
 		// align nicks
 		process.stdout.write(Array(maxNickLen - nick.length + 1).join(' '));
-		process.stdout.write(clc.xterm(clrnick)(nick));
-		process.stdout.write(' ');
-		process.stdout.write(bar);
+		process.stdout.write(clc.xterm(clrnick)(nick) + separatorColor(':'));
 		process.stdout.write(' ');
 
 		// remove nick from line array, now contains space separated text message
