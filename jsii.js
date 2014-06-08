@@ -1,5 +1,6 @@
 var clc = require('cli-color');
 var maxNickLen = 12;
+var fileBuf = 4096; // how many characters of file to remember
 var path = require('path');
 
 // we need this in global scope so we can remove the event listeners!
@@ -81,6 +82,13 @@ var openChan = function(filePath) {
 		}
 	};
 
+	// limit file to size fileBuf
+	if(file.length >= fileBuf) {
+		file = file.substr(file.length - fileBuf, file.length);
+		file = file.substr(file.indexOf("\n") + 1, file.length);
+	}
+
+	// clear terminal and print
 	process.stdout.write('\u001B[2J\u001B[0;0f');
 	printFile(file);
 
@@ -90,6 +98,13 @@ var openChan = function(filePath) {
 
 	out.on('line', function(data) {
 		file += data + '\n';
+		// limit file to size fileBuf
+		if(file.length >= fileBuf) {
+			file = file.substr(file.length - fileBuf, file.length);
+			file = file.substr(file.indexOf("\n") + 1, file.length);
+		}
+
+		// print the line
 		printLine(data);
 	});
 
