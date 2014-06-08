@@ -1,0 +1,10 @@
+{
+	"name" : "jsii",
+	"version" : "0.0.1",
+	"description" : "display output of ii irc client",
+	"main" : "jsii.js",
+	"dependencies" : {
+		"cli-color" : ">=0.3.2",
+		"tail" : ">=0.3.5"
+	}
+}
