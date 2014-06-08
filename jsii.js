@@ -68,11 +68,11 @@ var openChan = function(filePath) {
 
 		// remove nick from line array, now contains space separated text message
 		line.shift();
+		line = line.join(' ');
+		line = line.replace(ansi_escape_re, '');
 
-		for (var i = 0; i < line.length; i++) {
-			if(line[i].match(hilight_re))
-				hilight = true;
-		}
+		if(line.match(hilight_re))
+			hilight = true;
 
 		var textColor = 15;
 		if (nick === myNick)
@@ -80,14 +80,20 @@ var openChan = function(filePath) {
 		else if (hilight)
 			textColor = hilightColor;
 
+		// separator takes up 1 char + whitespace
+		var availWidth = process.stdout.columns - maxNickLen - 2;
+
 		// TODO: wrap at whitespace
-		for (var i = 0; i < line.length; i++) {
-			line[i] = line[i].replace(ansi_escape_re, '');
-			process.stdout.write(clc.xterm(textColor)(line[i]));
-			if(i != line.length - 1)
-				process.stdout.write(' ');
+		for (var i = 0; i < Math.ceil(line.length / availWidth); i++) {
+			var curLine = line.substr(i * availWidth, availWidth);
+
+			// empty space on line wrap
+			if (i > 0)
+				process.stdout.write(Array(process.stdout.columns - availWidth + 1).join(' '));
+
+			process.stdout.write(clc.xterm(textColor)(curLine));
+			process.stdout.write('\n');
 		}
-		process.stdout.write('\n');
 
 		// print channel name again
 		process.stdout.write(num + chan + ' ');
