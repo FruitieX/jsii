@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var clc = require('cli-color');
 var maxNickLen = 12;
 var fileBuf = 4096; // how many characters of file to remember
