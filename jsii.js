@@ -94,6 +94,10 @@ var openChan = function(filePath) {
 		var wrappedChars = 0;
 		var i = 0;
 
+		// terminal too small? don't print anything
+		if(availWidth <= 5)
+			return;
+
 		while(i * availWidth - wrappedChars < line.length) {
 			var start = i * availWidth - wrappedChars;
 			var curLine = line.substr(start, availWidth);
