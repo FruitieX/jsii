@@ -10,7 +10,6 @@ var readline = require('readline');
 var fs = require('fs');
 
 var rlv = require('readline-vim');
-var repl = require('repl');
 
 var separatorColor = clc.xterm(239);
 var numColor = clc.xterm(232).bgXterm(255);
@@ -20,7 +19,7 @@ var myNickColor = 1;
 var hilightColor = 3;
 
 // TODO: remove event listeners from these when switching chans
-var out, rl, vim;
+var out, rli, vim;
 var openChan = function(filePath) {
 	var outFileName = filePath + '/out';
 	var inFileName = filePath + '/in';
@@ -45,7 +44,7 @@ var openChan = function(filePath) {
 		process.stdout.write('\r'); // move cursor to beginning of line
 
 		// for multiline inputs move cursor up to prompt before printing
-		var inputLength = num_s.length + chan_s.length + r.rli.cursor + 1;
+		var inputLength = num_s.length + chan_s.length + rli.cursor + 1;
 		if(inputLength + 1 > process.stdout.columns)
 			process.stdout.write('\033[' + Math.floor(inputLength / process.stdout.columns) + 'A');
 
@@ -207,18 +206,18 @@ var openChan = function(filePath) {
 
 	var promptLength = num_s.length + chan_s.length + 1;
 
-	r = repl.start({
-		prompt: num_s + chan_s + ' ',
+	var rli = readline.createInterface({
 		input: process.stdin,
-		output: process.stdout,
-		eval: function(cmd, context, filename, callback) {
-			var msg = new Buffer(cmd.substring(1, cmd.length - 1), 'utf8');
-			redraw(file);
-			fs.writeSync(inFile, msg, 0, msg.length, null);
-		}
+		output: process.stdout
+	});
+	rli.setPrompt(num_s + chan_s + ' ');
+	rli.on('line', function(cmd) {
+		var msg = new Buffer(cmd + '\n', 'utf8');
+		redraw(file);
+		fs.writeSync(inFile, msg, 0, msg.length, null);
 	});
 
-	vim = rlv(r.rli, function() {
+	vim = rlv(rli, function() {
 		printPrompt();
 	});
 	vim.threshold = 500;
