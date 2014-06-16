@@ -45,7 +45,7 @@ var openChan = function(filePath) {
 		process.stdout.write('\r'); // move cursor to beginning of line
 
 		// for multiline inputs move cursor up to prompt before printing
-		var inputLength = num_s.length + chan_s.length + r.rli.line.length + 1;
+		var inputLength = num_s.length + chan_s.length + r.rli.cursor + 1;
 		if(inputLength + 1 > process.stdout.columns)
 			process.stdout.write('\033[' + Math.floor(inputLength / process.stdout.columns) + 'A');
 
