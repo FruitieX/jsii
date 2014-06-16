@@ -77,7 +77,9 @@ var openChan = function(filePath) {
 		line = line.replace(ansi_escape_re, '');
 
 		// 'fix' encoding of people not using utf-8...
+		line = line.replace(/�/g, 'å');
 		line = line.replace(/�/g, 'ä');
+		line = line.replace(/�/g, 'ö');
 
 		if(line.match(hilight_re))
 			hilight = true;
