@@ -21,6 +21,8 @@ var hilightColor = 3;
 // TODO: remove event listeners from these when switching chans
 var out, rli, vim;
 var openChan = function(filePath) {
+	var completions = [];
+
 	var outFileName = filePath + '/out';
 	var inFileName = filePath + '/in';
 	var file = fs.readFileSync(outFileName, 'utf8');
@@ -67,6 +69,10 @@ var openChan = function(filePath) {
 		line = line.split(' ');
 		// remove <> around nick
 		var nick = line[0].substring(1, line[0].length - 1);
+
+		if(completions.indexOf(nick) === -1) {
+			completions.push(nick);
+		}
 
 		if(nick === myNick) {
 			clrnick = myNickColor;
@@ -208,7 +214,13 @@ var openChan = function(filePath) {
 
 	var rli = readline.createInterface({
 		input: process.stdin,
-		output: process.stdout
+		output: process.stdout,
+		completer: function(line) {
+			var word = line.substring(line.lastIndexOf(" ") + 1);
+			var hits = completions.filter(function(c) { return c.indexOf(word) == 0 })
+			// show all completions if none found
+			return [hits.length ? hits : completions, word]
+		}
 	});
 	rli.setPrompt(num_s + chan_s + ' ');
 	rli.on('line', function(cmd) {
@@ -231,8 +243,8 @@ var openChan = function(filePath) {
 		printPrompt();
 	});
 
-	// start in normal mode
-	vim.forceNormal();
+	// start in insert mode
+	vim.forceInsert();
 };
 
 // TODO: changing channels?
