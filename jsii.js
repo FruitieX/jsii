@@ -14,6 +14,7 @@ var repl = require('repl');
 var separatorColor = clc.xterm(239);
 var numColor = clc.xterm(232).bgXterm(255);
 var chanColor = clc.xterm(255).bgXterm(239);
+var chanInsertColor = clc.xterm(232).bgXterm(255);
 var myNickColor = 1;
 var hilightColor = 3;
 
@@ -33,6 +34,25 @@ var openChan = function(filePath) {
 	}
 	var chan_s = ' ' + bn.substring(bn.indexOf('_') + 1, bn.length) + ' ';
 	var chan = chanColor(chan_s);
+	var chan_insert = chanInsertColor(chan_s);
+
+	var printPrompt = function() {
+		// prompt printing function, assumes cursor is on last line
+		// input may be multiline
+		process.stdout.write('\033[s'); // store cursor position
+		process.stdout.write('\r'); // move cursor to beginning of line
+
+		// for multiline inputs move cursor up to prompt before printing
+		var inputLength = num_s.length + chan_s.length + r.rli.line.length + 1;
+		if(inputLength + 1 > process.stdout.columns)
+			process.stdout.write('\033[' + Math.floor(inputLength / process.stdout.columns) + 'A');
+
+		if(vim.isnormal)
+			process.stdout.write(num + chan + ' ');
+		else
+			process.stdout.write(num + chan_insert + ' ');
+		process.stdout.write('\033[u'); // restore cursor position
+	};
 
 	var printLine = function(line) {
 		var hilight = false;
@@ -179,6 +199,9 @@ var openChan = function(filePath) {
 	process.stdout.on('resize', function() {
 		process.stdout.write('\u001B[2J\u001B[0;0f');
 		redraw(file);
+
+		// hack: print our prompt after node readline prints its prompt ;)
+		setTimeout(printPrompt);
 	});
 
 	var promptLength = num_s.length + chan_s.length + 1;
@@ -194,46 +217,22 @@ var openChan = function(filePath) {
 	});
 
 	vim = rlv(r.rli, function() {
-		// prompt printing function
-		process.stdout.write('\033[s');
-		process.stdout.write('\r');
-		var inputLength = num_s.length + chan_s.length + r.rli.line.length + 1;
-		if(inputLength + 1 > process.stdout.columns)
-			process.stdout.write('\033[' + Math.floor(inputLength / process.stdout.columns) + 'A');
-		process.stdout.write(num + chan + ' ');
-		process.stdout.write('\033[u');
+		printPrompt();
 	});
 	vim.threshold = 500;
 	var map = vim.map;
 	map.insert('jj', 'esc');
 
 	vim.events.on('normal', function() {
-		// store cursor position
-		process.stdout.write('\033[s');
-		redraw(file);
-		process.stdout.write(r.rli.line);
-		// restore cursor position
-		process.stdout.write('\033[u');
+		printPrompt();
 	});
 	vim.events.on('insert', function() {
-		// store cursor position
-		process.stdout.write('\033[s');
-		redraw(file);
-		process.stdout.write(r.rli.line);
-		// restore cursor position
-		process.stdout.write('\033[u');
+		printPrompt();
 	});
 
-	// hack to print the custom prompt on top of the node readline one at startup
-	process.stdout.write('\033[s'); // store cursor position
-	process.stdout.write('\r'); // carriage return
-	process.stdout.write(num + chan + ' ');
-	process.stdout.write('\033[u'); // restore cursor position
+	// start in normal mode
+	vim.forceNormal();
 };
-
-//rlv.on('line', function(cmd) {
-	//console.log(cmd);
-//});
 
 // TODO: changing channels?
 var currentChan = process.argv[2];
