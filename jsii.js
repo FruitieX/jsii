@@ -6,6 +6,10 @@ var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
 var ansi_escape_re = /\x1b[^m]*m/;
+var readline = require('readline');
+
+var rlv = require('readline-vim');
+var repl = require('repl');
 
 var separatorColor = clc.xterm(239);
 var numColor = clc.xterm(232).bgXterm(255);
@@ -13,8 +17,8 @@ var chanColor = clc.xterm(255).bgXterm(239);
 var myNickColor = 1;
 var hilightColor = 3;
 
-// we need this in global scope so we can remove the event listeners!
-var out;
+// TODO: remove event listeners from these when switching chans
+var out, rl, vim;
 var openChan = function(filePath) {
 	var outFile = filePath + '/out';
 	var inFile = filePath + '/in';
@@ -35,6 +39,7 @@ var openChan = function(filePath) {
 
 		// clear channel name
 		process.stdout.write('\r' + Array(num_s.length + chan_s.length + 1).join(' ') + '\r');
+		//process.stdout.write('\033[<' + (process.stdout.rows - 1) + '>;<0>H');
 
 		// remove timestamps
 		line = line.replace(/^([^ ]+ ){2}/, '');
@@ -123,12 +128,12 @@ var openChan = function(filePath) {
 			i++;
 		}
 
-		// print channel name again
+		// restore prompt
 		process.stdout.write(num + chan + ' ');
 	};
 
 	// log entire file
-	var printFile = function(file) {
+	var redraw = function(file) {
 		var start = 0;
 		while (start < file.length) {
 			var end = file.indexOf('\n', start);
@@ -145,20 +150,15 @@ var openChan = function(filePath) {
 		file = file.substr(file.indexOf("\n") + 1, file.length);
 	}
 
-	// set raw mode
-	var stdin = process.stdin;
-	stdin.setRawMode(true);
-	stdin.resume();
-	stdin.setEncoding('utf8');
-
-	// handle 'q', 'ctrl-c' by quitting
-	stdin.on('data', function(key) {
-		if(key == 'q' || key == '\u0003') process.exit();
+	// 'ctrl-c' = quitting
+	process.stdin.on('data', function(key) {
+		if(key == '\u0003') process.exit();
 	});
 
 	// clear terminal and print
 	process.stdout.write('\u001B[2J\u001B[0;0f');
-	printFile(file);
+	// move cursor to last line
+	redraw(file);
 
 	// watch file
 	Tail = require('tail').Tail;
@@ -178,9 +178,62 @@ var openChan = function(filePath) {
 
 	process.stdout.on('resize', function() {
 		process.stdout.write('\u001B[2J\u001B[0;0f');
-		printFile(file);
+		redraw(file);
 	});
+
+	var promptLength = num_s.length + chan_s.length + 1;
+
+	r = repl.start({
+		prompt: num_s + chan_s + ' ',
+		input: process.stdin,
+		output: process.stdout,
+		eval: function(cmd, context, filename, callback) {
+			console.log(cmd);
+			redraw(file);
+		}
+	});
+
+	vim = rlv(r.rli, function() {
+		// prompt printing function
+		process.stdout.write('\033[s');
+		process.stdout.write('\r');
+		var inputLength = num_s.length + chan_s.length + r.rli.line.length + 1;
+		if(inputLength + 1 > process.stdout.columns)
+			process.stdout.write('\033[' + Math.floor(inputLength / process.stdout.columns) + 'A');
+		process.stdout.write(num + chan + ' ');
+		process.stdout.write('\033[u');
+	});
+	vim.threshold = 500;
+	var map = vim.map;
+	map.insert('jj', 'esc');
+
+	vim.events.on('normal', function() {
+		// store cursor position
+		process.stdout.write('\033[s');
+		redraw(file);
+		process.stdout.write(r.rli.line);
+		// restore cursor position
+		process.stdout.write('\033[u');
+	});
+	vim.events.on('insert', function() {
+		// store cursor position
+		process.stdout.write('\033[s');
+		redraw(file);
+		process.stdout.write(r.rli.line);
+		// restore cursor position
+		process.stdout.write('\033[u');
+	});
+
+	// hack to print the custom prompt on top of the node readline one at startup
+	process.stdout.write('\033[s'); // store cursor position
+	process.stdout.write('\r'); // carriage return
+	process.stdout.write(num + chan + ' ');
+	process.stdout.write('\033[u'); // restore cursor position
 };
+
+//rlv.on('line', function(cmd) {
+	//console.log(cmd);
+//});
 
 // TODO: changing channels?
 var currentChan = process.argv[2];
