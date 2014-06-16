@@ -7,6 +7,7 @@ var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
 var ansi_escape_re = /\x1b[^m]*m/;
 var readline = require('readline');
+var fs = require('fs');
 
 var rlv = require('readline-vim');
 var repl = require('repl');
@@ -21,9 +22,10 @@ var hilightColor = 3;
 // TODO: remove event listeners from these when switching chans
 var out, rl, vim;
 var openChan = function(filePath) {
-	var outFile = filePath + '/out';
-	var inFile = filePath + '/in';
-	var file = require('fs').readFileSync(outFile, 'utf8');
+	var outFileName = filePath + '/out';
+	var inFileName = filePath + '/in';
+	var file = fs.readFileSync(outFileName, 'utf8');
+	var inFile = fs.openSync(inFileName, 'a');
 
 	var bn = path.basename(filePath);
 	var num_s = bn.substring(0, bn.indexOf('_'));
@@ -147,9 +149,8 @@ var openChan = function(filePath) {
 			process.stdout.write('\n');
 			i++;
 		}
-
-		// restore prompt
-		process.stdout.write(num + chan + ' ');
+		process.stdout.write(num_s + chan_s + ' ');
+		setTimeout(printPrompt);
 	};
 
 	// log entire file
@@ -182,7 +183,7 @@ var openChan = function(filePath) {
 
 	// watch file
 	Tail = require('tail').Tail;
-	out = new Tail(outFile);
+	out = new Tail(outFileName);
 
 	out.on('line', function(data) {
 		file += data + '\n';
@@ -211,8 +212,9 @@ var openChan = function(filePath) {
 		input: process.stdin,
 		output: process.stdout,
 		eval: function(cmd, context, filename, callback) {
-			console.log(cmd);
+			var msg = new Buffer(cmd.substring(1, cmd.length - 1), 'utf8');
 			redraw(file);
+			fs.writeSync(inFile, msg, 0, msg.length, null);
 		}
 	});
 
