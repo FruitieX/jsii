@@ -4,7 +4,7 @@
 	"description" : "display output of ii irc client",
 	"main" : "jsii.js",
 	"dependencies" : {
-		"readline-vim" : "git@github.com:FruitieX/readline-vim.git",
+		"readline-vim" : "git://github.com/FruitieX/readline-vim.git",
 		"cli-color" : ">=0.3.2",
 		"tail" : ">=0.3.5"
 	}
