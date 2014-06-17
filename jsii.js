@@ -39,10 +39,12 @@ var openChan = function(filePath) {
 	var chan = chanColor(chan_s);
 	var chan_insert = chanInsertColor(chan_s);
 
-	var printPrompt = function() {
-		// prompt printing function, assumes cursor is on last line
+	var printPrompt = function(ignoreCursor) {
+		// prompt printing function, assumes cursor is in the prompt
 		// input may be multiline
-		process.stdout.write('\033[s'); // store cursor position
+		if(!ignoreCursor)
+			process.stdout.write('\033[s'); // store cursor position
+
 		process.stdout.write('\r'); // move cursor to beginning of line
 
 		// for multiline inputs move cursor up to prompt before printing
@@ -54,15 +56,25 @@ var openChan = function(filePath) {
 			process.stdout.write(num + chan + ' ');
 		else
 			process.stdout.write(num + chan_insert + ' ');
-		process.stdout.write('\033[u'); // restore cursor position
+		process.stdout.write(rli.line);
+
+		if(!ignoreCursor)
+			process.stdout.write('\033[u'); // restore cursor position
 	};
 
 	var printLine = function(line) {
 		var hilight = false;
 
-		// clear channel name
-		process.stdout.write('\r' + Array(num_s.length + chan_s.length + 1).join(' ') + '\r');
-		//process.stdout.write('\033[<' + (process.stdout.rows - 1) + '>;<0>H');
+		// move cursor to beginning of prompt first
+		var inputLength = num_s.length + chan_s.length + rli.cursor + 1;
+		if(inputLength + 1 > process.stdout.columns)
+			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns) + ';0H');
+		// clear channel name + prompt
+		process.stdout.write('\r' + Array(num_s.length + chan_s.length + 1 + rli.line.length + 1).join(' ') + '\r');
+		//process.stdout.write('\033[' + (process.stdout.rows - 1) + ';0H');
+		if(inputLength + 1 > process.stdout.columns)
+			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns) + ';0H');
+
 
 		// remove timestamps
 		line = line.replace(/^([^ ]+ ){2}/, '');
@@ -181,37 +193,6 @@ var openChan = function(filePath) {
 		if(key == '\u0003') process.exit();
 	});
 
-	// clear terminal and print
-	process.stdout.write('\u001B[2J\u001B[0;0f');
-	// move cursor to last line
-	redraw(file);
-
-	// watch file
-	Tail = require('tail').Tail;
-	out = new Tail(outFileName);
-
-	out.on('line', function(data) {
-		file += data + '\n';
-		// limit file to size fileBuf
-		if(file.length >= fileBuf) {
-			file = file.substr(file.length - fileBuf, file.length);
-			file = file.substr(file.indexOf("\n") + 1, file.length);
-		}
-
-		// print the line
-		printLine(data);
-	});
-
-	process.stdout.on('resize', function() {
-		process.stdout.write('\u001B[2J\u001B[0;0f');
-		redraw(file);
-
-		// hack: print our prompt after node readline prints its prompt ;)
-		setTimeout(printPrompt);
-	});
-
-	var promptLength = num_s.length + chan_s.length + 1;
-
 	var rli = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,
@@ -230,6 +211,42 @@ var openChan = function(filePath) {
 			return [hits, word]
 		}
 	});
+
+	// clear terminal and print
+	process.stdout.write('\u001B[2J\u001B[0;0f');
+	// move cursor to last line
+	redraw(file);
+
+	// watch file
+	Tail = require('tail').Tail;
+	out = new Tail(outFileName);
+
+	out.on('line', function(data) {
+		file += data + '\n';
+		// limit file to size fileBuf
+		if(file.length >= fileBuf) {
+			file = file.substr(file.length - fileBuf, file.length);
+			file = file.substr(file.indexOf("\n") + 1, file.length);
+		}
+
+		process.stdout.write('\033[s'); // store cursor position
+		redraw(file);
+		printPrompt(true); // print prompt again, don't reset cursor in printPrompt()
+		process.stdout.write('\033[u'); // restore cursor position
+	});
+
+	process.stdout.on('resize', function() {
+		var cursorPos = rli.cursor;
+		process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
+		redraw(file);
+
+		// hack: print our prompt after node readline prints its prompt ;)
+		setTimeout(function() {
+			printPrompt();
+			process.stdout.write('\033[' + cursorPos + 'C');
+		});
+	});
+
 	rli.setPrompt(num_s + chan_s + ' ');
 	rli.on('line', function(cmd) {
 		var msg = new Buffer(cmd + '\n', 'utf8');
