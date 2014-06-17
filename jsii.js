@@ -218,8 +218,16 @@ var openChan = function(filePath) {
 		completer: function(line) {
 			var word = line.substring(line.lastIndexOf(" ") + 1);
 			var hits = completions.filter(function(c) { return c.indexOf(word) == 0 })
-			// show all completions if none found
-			return [hits.length ? hits : completions, word]
+			for(var i = hits.length - 1; i >= 0; i--) {
+				if(hits[i] === '!' || hits[i] === '***') {
+					hits.splice(i, 1);
+				} else if (word === line) { // typing at beginning of line
+					hits[i] += ': ';
+				} else {
+					hits[i] += ', ';
+				}
+			}
+			return [hits, word]
 		}
 	});
 	rli.setPrompt(num_s + chan_s + ' ');
