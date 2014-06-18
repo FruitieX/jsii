@@ -19,6 +19,7 @@ var chanColor = clc.xterm(255).bgXterm(239);
 var chanInsertColor = clc.xterm(232).bgXterm(255);
 var myNickColor = 1;
 var hilightColor = 3;
+var actionColor = 10;
 
 var openChan = function(filePath) {
 	var out, rli, vim;
@@ -75,6 +76,7 @@ var openChan = function(filePath) {
 	// prints line at current terminal cursor position
 	var printLine = function(line) {
 		var hilight = false;
+		var action = false;
 
 		// remove timestamps
 		line = line.replace(/^([^ ]+ ){2}/, '');
@@ -86,7 +88,18 @@ var openChan = function(filePath) {
 			completions.push(nick);
 		}
 
-		if(nick === myNick) {
+		// remove nick from line array, now contains space separated text message
+		line.shift();
+		line = line.join(' ');
+
+		// support irc ACTION messages
+		if(line.substring(0, 8) === "\001ACTION ") {
+			line = nick + ' ' + line.substring(8);
+			nick = '*';
+			clrnick = actionColor;
+			action = true;
+		}
+		else if(nick === myNick) {
 			clrnick = myNickColor;
 		} else {
 			// nick color, avoids dark colors
@@ -110,14 +123,11 @@ var openChan = function(filePath) {
 
 		// limit nicklen
 		nick = nick.substr(0, maxNickLen);
-		// align nicks
+		// align nicks and print
 		process.stdout.write(Array(maxNickLen - nick.length + 1).join(' '));
 		process.stdout.write(clc.xterm(clrnick)(nick) + separatorColor(':'));
 		process.stdout.write(' ');
 
-		// remove nick from line array, now contains space separated text message
-		line.shift();
-		line = line.join(' ');
 		line = line.replace(ansi_escape_re, '');
 
 		// 'fix' encoding of people not using utf-8...
@@ -131,6 +141,8 @@ var openChan = function(filePath) {
 		var textColor = 15;
 		if (nick === myNick)
 			textColor = myNickColor;
+		else if (action)
+			textColor = actionColor;
 		else if (hilight)
 			textColor = hilightColor;
 
@@ -311,6 +323,8 @@ var openChan = function(filePath) {
 		var msg_s = cmd;
 		if(msg_s === '/bl' || msg_s.substring(0, 4) === '/bl ') { // request backlog
 			msg_s = "/privmsg *backlog " + chan_s + msg_s.substring(4);
+		} else if(msg_s.substring(0, 4) === '/me ') { // irc ACTION message
+			msg_s = "\001ACTION " + msg_s.substring(4);
 		} else if (msg_s === '/ul') { // list urls in buffer
 			var current = 0;
 			var splitFile = file.split('\n');
