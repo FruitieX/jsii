@@ -265,12 +265,16 @@ var openChan = function(filePath) {
 		// hack: print our prompt after node readline prints its prompt ;)
 		setTimeout(function() {
 			printPrompt(true);
-			var inputLength = num_s.length + chan_s.length + rli.line.length;
+			var inputLength = num_s.length + chan_s.length + 1 + rli.line.length;
+			// move cursor to beginning of first prompt line
 			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
-			// move cursor back to where it was
-			if(cursorPos)
-				process.stdout.write('\033[' + (num_s.length + chan_s.length + 1 + cursorPos) + 'C');
+			// move cursor back to where it was:
+			// down
+			if(num_s.length + chan_s.length + 1 + cursorPos > process.stdout.columns)
+				process.stdout.write('\033[' + Math.floor((num_s.length + chan_s.length + 1 + cursorPos) / process.stdout.columns) + 'B');
+			// right
+			process.stdout.write('\033[' + (num_s.length + chan_s.length + 1 + cursorPos) % process.stdout.columns + 'C');
 		});
 	});
 
