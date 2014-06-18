@@ -325,6 +325,8 @@ var openChan = function(filePath) {
 			msg_s = "/privmsg *backlog " + chan_s + msg_s.substring(4);
 		} else if(msg_s.substring(0, 4) === '/me ') { // irc ACTION message
 			msg_s = "\001ACTION " + msg_s.substring(4);
+		} else if(msg_s === '/names') { // request nick list
+			msg_s = "/names " + chan_s;
 		} else if (msg_s === '/ul') { // list urls in buffer
 			var current = 0;
 			var splitFile = file.split('\n');
