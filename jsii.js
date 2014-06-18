@@ -18,9 +18,8 @@ var chanInsertColor = clc.xterm(232).bgXterm(255);
 var myNickColor = 1;
 var hilightColor = 3;
 
-// TODO: remove event listeners from these when switching chans
-var out, rli, vim;
 var openChan = function(filePath) {
+	var out, rli, vim;
 	var completions = [];
 
 	var outFileName = filePath + '/out';
@@ -204,6 +203,15 @@ var openChan = function(filePath) {
 	process.stdin.on('data', function(key) {
 		if(key == '\u0003') process.exit();
 	});
+	process.stdin.on('data', function(key) {
+		// next channel
+		if(key.toString('hex') === '1b6c') process.exit(1);
+		// previous channel
+		if(key.toString('hex') === '1b68') process.exit(2);
+
+		// DEBUG: use this to find the keycodes
+		//console.log(key.toString('hex'));
+	});
 
 	var rli = readline.createInterface({
 		input: process.stdin,
@@ -304,6 +312,4 @@ var openChan = function(filePath) {
 	vim.forceInsert();
 };
 
-// TODO: changing channels?
-var currentChan = process.argv[2];
 openChan(process.argv[2]);
