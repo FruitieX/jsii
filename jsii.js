@@ -5,9 +5,11 @@ var fileBuf = 4096; // how many characters of file to remember
 var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
+var url_re = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
 var ansi_escape_re = /\x1b[^m]*m/;
 var readline = require('readline');
 var fs = require('fs');
+var spawn = require('child_process').spawn;
 
 var rlv = require('readline-vim');
 
@@ -238,17 +240,8 @@ var openChan = function(filePath) {
 		}
 	});
 
-	// watch file for changes
-	Tail = require('tail').Tail;
-	out = new Tail(outFileName);
-	out.on('line', function(data) {
-		file += data + '\n';
-		// limit file to size fileBuf
-		if(file.length >= fileBuf) {
-			file = file.substr(file.length - fileBuf, file.length);
-			file = file.substr(file.indexOf("\n") + 1, file.length);
-		}
-
+	// print a line above prompt and return cursor to correct position within prompt
+	var printLinePromptCursor = function(line) {
 		process.stdout.write('\033[s'); // store cursor position
 
 		// clear prompt, then move cursor to beginning of prompt
@@ -257,7 +250,7 @@ var openChan = function(filePath) {
 		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
 		// print line
-		printLine(data);
+		printLine(line);
 
 		// make room for prompt
 		// TODO: WHY should we use rli.cursor not rli.line.length here?
@@ -270,6 +263,20 @@ var openChan = function(filePath) {
 
 		printPrompt(true); // print prompt again, but let us handle cursor restoring
 		process.stdout.write('\033[u'); // restore cursor position
+	};
+
+	// watch file for changes
+	Tail = require('tail').Tail;
+	out = new Tail(outFileName);
+	out.on('line', function(data) {
+		file += data + '\n';
+		// limit file to size fileBuf
+		if(file.length >= fileBuf) {
+			file = file.substr(file.length - fileBuf, file.length);
+			file = file.substr(file.indexOf("\n") + 1, file.length);
+		}
+
+		printLinePromptCursor(data);
 	});
 
 	process.stdout.on('resize', function() {
@@ -300,8 +307,44 @@ var openChan = function(filePath) {
 		printPrompt(true);
 
 		var msg_s = cmd;
-		if(msg_s.substring(0, 3) === '/bl') {
+		if(msg_s === '/bl' || msg_s.substring(0, 4) === '/bl ') { // request backlog
 			msg_s = "/privmsg *backlog " + chan_s + msg_s.substring(4);
+		} else if (msg_s === '/u' || msg_s.substring(0, 3) === '/u ') { // open url
+			var skip = parseInt(msg_s.substring(3)) | 0;
+			var splitFile = file.split('\n');
+
+			var url;
+			for (var i = splitFile.length - 1; i >= 0; i--) {
+				var words = splitFile[i].split(' ');
+
+				for (var j = words.length - 1; j >= 0; j--) {
+					var res = url_re.exec(words[j]);
+					if(res) {
+						if(skip > 0) {
+							skip--;
+							continue;
+						}
+						url = res[0];
+						break;
+					}
+				}
+
+				if(url)
+					break;
+			}
+
+			if(url) {
+				var child = spawn('chromium', [url], {
+					detached: true,
+					stdio: [ 'ignore', 'ignore' , 'ignore' ]
+				});
+				child.unref();
+				printLinePromptCursor("xxxx-xx-xx xx:xx <***> URL " + (parseInt(msg_s.substring(3)) | 0) +  " opened: " + url);
+			} else {
+				printLinePromptCursor("xxxx-xx-xx xx:xx <***> No URL found");
+			}
+
+			return;
 		}
 
 		var msg = new Buffer(msg_s + '\n', 'utf8');
