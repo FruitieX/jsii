@@ -166,13 +166,9 @@ var openChan = function(filePath) {
 			process.stdout.write('\n');
 			i++;
 		}
-		/*
-		process.stdout.write(num_s + chan_s + ' ');
-		setTimeout(printPrompt);
-		*/
 	};
 
-	// log entire file
+	// redraw screen
 	var redraw = function() {
 		process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
 		var inputLength = num_s.length + chan_s.length + rli.line.length;
@@ -184,11 +180,10 @@ var openChan = function(filePath) {
 			if(end === -1)
 				break;
 
-			//process.stdout.write('\n');
 			printLine(file.substring(start, end));
 			start = end + 1;
 		}
-		// make room for the prompt and redraw it
+		// make room for the prompt
 		// TODO: why should this be rli.cursor
 		var inputLength = num_s.length + chan_s.length + 1 + rli.cursor;
 		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
@@ -202,9 +197,10 @@ var openChan = function(filePath) {
 		file = file.substr(file.indexOf("\n") + 1, file.length);
 	}
 
-	// 'ctrl-c' = quitting
+	// handle keyboard events
 	process.stdin.on('data', function(key) {
-		if(key == '\u0003') process.exit();
+		// 'ctrl-c' = quit
+		if(key == '\u0003') process.exit(0);
 	});
 	process.stdin.on('data', function(key) {
 		var keyHex = key.toString('hex');
@@ -224,15 +220,18 @@ var openChan = function(filePath) {
 	var rli = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,
+
+		// nickname completion from nicknames in file buffer
+		// TODO: get nicks from irc server?
 		completer: function(line) {
 			var word = line.substring(line.lastIndexOf(" ") + 1);
 			var hits = completions.filter(function(c) { return c.indexOf(word) == 0 })
 			for(var i = hits.length - 1; i >= 0; i--) {
-				if(hits[i] === '!' || hits[i] === '***') {
+				if(hits[i] === '!' || hits[i] === '***') { // skip status/info nicknames
 					hits.splice(i, 1);
-				} else if (word === line) { // typing at beginning of line
+				} else if (word === line) { // typing at beginning of line? append colon
 					hits[i] += ': ';
-				} else {
+				} else { // else append comma
 					hits[i] += ', ';
 				}
 			}
@@ -240,8 +239,9 @@ var openChan = function(filePath) {
 		}
 	});
 
-	// print a line above prompt and return cursor to correct position within prompt
-	var printLinePromptCursor = function(line) {
+	// clear prompt, print line above prompt, print prompt again and return cursor
+	// to correct position within prompt
+	var printLine_restorePrompt = function(line) {
 		process.stdout.write('\033[s'); // store cursor position
 
 		// clear prompt, then move cursor to beginning of prompt
@@ -255,7 +255,7 @@ var openChan = function(filePath) {
 		// make room for prompt
 		// TODO: WHY should we use rli.cursor not rli.line.length here?
 		// otherwise we get too many newlines when cursor is positioned on an input
-		// line != the last one. IDGI.
+		// line != the last one. IDGI. :(
 		inputLength = num_s.length + chan_s.length + rli.cursor;
 		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
 			process.stdout.write('\n');
@@ -276,9 +276,10 @@ var openChan = function(filePath) {
 			file = file.substr(file.indexOf("\n") + 1, file.length);
 		}
 
-		printLinePromptCursor(data);
+		printLine_restorePrompt(data);
 	});
 
+	// handle terminal resize
 	process.stdout.on('resize', function() {
 		var cursorPos = rli.cursor;
 		process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
@@ -301,6 +302,7 @@ var openChan = function(filePath) {
 		});
 	});
 
+	// parse some select commands from input line
 	rli.setPrompt(num_s + chan_s + ' ');
 	rli.on('line', function(cmd) {
 		redraw();
@@ -321,7 +323,7 @@ var openChan = function(filePath) {
 					var res = url_re.exec(words[j]);
 					if(res) {
 						url = res[0];
-						printLinePromptCursor("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
+						printLine_restorePrompt("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
 						current++;
 					}
 				}
@@ -358,24 +360,31 @@ var openChan = function(filePath) {
 					stdio: [ 'ignore', 'ignore' , 'ignore' ]
 				});
 				child.unref();
-				printLinePromptCursor("xxxx-xx-xx xx:xx <***> URL " + (parseInt(msg_s.substring(3)) | 0) +  " opened: " + url);
+				printLine_restorePrompt("xxxx-xx-xx xx:xx <***> URL " + (parseInt(msg_s.substring(3)) | 0) +  " opened: " + url);
 			} else {
-				printLinePromptCursor("xxxx-xx-xx xx:xx <***> No URL found");
+				printLine_restorePrompt("xxxx-xx-xx xx:xx <***> No URL found");
 			}
 
 			return;
 		}
 
+		// send input line to ii
 		var msg = new Buffer(msg_s + '\n', 'utf8');
 		fs.writeSync(inFile, msg, 0, msg.length, null);
 	});
 
+	// vim like keybindings
 	vim = rlv(rli, function() {
+		// callback function prints our prompt whenever readline handles input
 		printPrompt();
 	});
-	vim.threshold = 500;
+
+	// custom keymap
 	var map = vim.map;
+	// typing 'jj' quickly toggles to normal mode
 	map.insert('jj', 'esc');
+	// 500 ms delay allowed between j keypresses
+	vim.threshold = 500;
 
 	// clear terminal and print file contents at launch
 	process.stdout.write('\u001B[2J\u001B[0;0f');
