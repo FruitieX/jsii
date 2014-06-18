@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 var clc = require('cli-color');
 var maxNickLen = 12;
-var fileBuf = 4096; // how many characters of file to remember
+var fileBuf = 8192; // how many characters of file to remember
 var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
