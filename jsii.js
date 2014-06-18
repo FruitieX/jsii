@@ -39,10 +39,11 @@ var openChan = function(filePath) {
 	var chan = chanColor(chan_s);
 	var chan_insert = chanInsertColor(chan_s);
 
-	var printPrompt = function(ignoreCursor) {
-		// prompt printing function, assumes cursor is in the prompt
-		// input may be multiline
-		if(!ignoreCursor)
+	// prompt printing function, assumes cursor is inside the prompt where node
+	// readline expects it to be. cursor position is restored after printing the
+	// prompt unless cursorAfterPrompt is given, then it's put after the input line
+	var printPrompt = function(cursorAfterPrompt) {
+		if(!cursorAfterPrompt)
 			process.stdout.write('\033[s'); // store cursor position
 
 		process.stdout.write('\r'); // move cursor to beginning of line
@@ -58,23 +59,21 @@ var openChan = function(filePath) {
 			process.stdout.write(num + chan_insert + ' ');
 		process.stdout.write(rli.line);
 
-		if(!ignoreCursor)
+		if(!cursorAfterPrompt)
 			process.stdout.write('\033[u'); // restore cursor position
 	};
 
+	var clearPrompt = function() {
+		// move cursor to beginning of prompt first
+		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
+		// clear channel name + prompt
+		process.stdout.write(Array(num_s.length + chan_s.length + 1 + rli.line.length + 1).join(' '));
+	};
+
+	// prints line at current terminal cursor position
 	var printLine = function(line) {
 		var hilight = false;
-
-		// move cursor to beginning of prompt first
-		var inputLength = num_s.length + chan_s.length + rli.cursor + 1;
-		if(inputLength + 1 > process.stdout.columns)
-			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns) + ';0H');
-		// clear channel name + prompt
-		process.stdout.write('\r' + Array(num_s.length + chan_s.length + 1 + rli.line.length + 1).join(' ') + '\r');
-		//process.stdout.write('\033[' + (process.stdout.rows - 1) + ';0H');
-		if(inputLength + 1 > process.stdout.columns)
-			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns) + ';0H');
-
 
 		// remove timestamps
 		line = line.replace(/^([^ ]+ ){2}/, '');
@@ -166,19 +165,31 @@ var openChan = function(filePath) {
 			process.stdout.write('\n');
 			i++;
 		}
+		/*
 		process.stdout.write(num_s + chan_s + ' ');
 		setTimeout(printPrompt);
+		*/
 	};
 
 	// log entire file
-	var redraw = function(file) {
+	var redraw = function() {
+		// clear prompt, then move cursor to beginning of prompt
+		clearPrompt();
+
 		var start = 0;
 		while (start < file.length) {
 			var end = file.indexOf('\n', start);
 			if(end === -1)
 				break;
+
+			//process.stdout.write('\n');
 			printLine(file.substring(start, end));
 			start = end + 1;
+		}
+		// make room for the prompt and redraw it
+		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
+			process.stdout.write('\n');
 		}
 	};
 
@@ -212,15 +223,9 @@ var openChan = function(filePath) {
 		}
 	});
 
-	// clear terminal and print
-	process.stdout.write('\u001B[2J\u001B[0;0f');
-	// move cursor to last line
-	redraw(file);
-
-	// watch file
+	// watch file for changes
 	Tail = require('tail').Tail;
 	out = new Tail(outFileName);
-
 	out.on('line', function(data) {
 		file += data + '\n';
 		// limit file to size fileBuf
@@ -230,27 +235,50 @@ var openChan = function(filePath) {
 		}
 
 		process.stdout.write('\033[s'); // store cursor position
-		redraw(file);
-		printPrompt(true); // print prompt again, don't reset cursor in printPrompt()
+
+		// clear prompt, then move cursor to beginning of prompt
+		clearPrompt();
+		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
+
+		// print line
+		printLine(data);
+
+		// make room for prompt
+		// TODO: WHY should we use rli.cursor not rli.line.length here?
+		// otherwise we get too many newlines when cursor is positioned on an input
+		// line != the last one. IDGI.
+		inputLength = num_s.length + chan_s.length + rli.cursor;
+		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
+			process.stdout.write('\n');
+		}
+
+		printPrompt(true); // print prompt again, but let us handle cursor restoring
 		process.stdout.write('\033[u'); // restore cursor position
 	});
 
 	process.stdout.on('resize', function() {
 		var cursorPos = rli.cursor;
 		process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
-		redraw(file);
+		redraw();
 
 		// hack: print our prompt after node readline prints its prompt ;)
 		setTimeout(function() {
-			printPrompt();
-			process.stdout.write('\033[' + cursorPos + 'C');
+			printPrompt(true);
+			var inputLength = num_s.length + chan_s.length + rli.line.length;
+			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
+
+			// move cursor back to where it was
+			if(cursorPos)
+				process.stdout.write('\033[' + (num_s.length + chan_s.length + 1 + cursorPos) + 'C');
 		});
 	});
 
 	rli.setPrompt(num_s + chan_s + ' ');
 	rli.on('line', function(cmd) {
 		var msg = new Buffer(cmd + '\n', 'utf8');
-		redraw(file);
+		redraw();
+		printPrompt(true);
 		fs.writeSync(inFile, msg, 0, msg.length, null);
 	});
 
@@ -261,12 +289,10 @@ var openChan = function(filePath) {
 	var map = vim.map;
 	map.insert('jj', 'esc');
 
-	vim.events.on('normal', function() {
-		printPrompt();
-	});
-	vim.events.on('insert', function() {
-		printPrompt();
-	});
+	// clear terminal and print file contents at launch
+	process.stdout.write('\u001B[2J\u001B[0;0f');
+	redraw();
+	printPrompt(true);
 
 	// start in insert mode
 	vim.forceInsert();
