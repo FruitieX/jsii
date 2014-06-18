@@ -66,6 +66,11 @@ if [[ -z "$2" ]]; then
 			CHANNEL=$(find $CHANS -iregex ".*/${num}_.*" | head -n1)
 			node ~/src/jsii/jsii.js $CHANNEL
 			retval=$?
+		else
+			num=$retval
+			CHANNEL=$(find $CHANS -iregex ".*/${num}_.*" | head -n1)
+			node ~/src/jsii/jsii.js $CHANNEL
+			retval=$?
 		fi
 	done
 elif [[ "$2" == "/u" ]]; then

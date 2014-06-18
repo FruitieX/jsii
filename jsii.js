@@ -204,12 +204,17 @@ var openChan = function(filePath) {
 		if(key == '\u0003') process.exit();
 	});
 	process.stdin.on('data', function(key) {
-		// previous channel
-		if(key.toString('hex') === '1b68') process.exit(10);
-		// next channel
-		if(key.toString('hex') === '1b6c') process.exit(11);
+		var keyHex = key.toString('hex');
 
-		// DEBUG: use this to find the keycodes
+		// previous channel (alt + h)
+		if(keyHex === '1b68') process.exit(10);
+		// next channel (alt + l)
+		else if(keyHex === '1b6c') process.exit(11);
+		// jump to this channel (alt + 1-9)
+		else if(keyHex.substring(0, 3) === '1b3' &&
+			keyHex.substring(3) !== '0') process.exit(keyHex.substring(3));
+
+		// DEBUG: uncomment this line to find the keycodes
 		//console.log(key.toString('hex'));
 	});
 
