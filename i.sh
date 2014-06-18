@@ -8,7 +8,8 @@
 # - the script first searches $CHANS and then $IRCPATH
 # - you can symlink your favorite irc channels to $CHANS
 # - symlink them like so to number them: $CHANS/42_#channelname, starting from 1
-# - this allows you to browse through them with Alt+(h/l)
+#   (you might want to use the included irc_symlink.sh script for this)
+# - this allows you to browse through channels with Alt+(h/l) and Alt+(1-9)
 
 # i foobar # launch jsii with channel in $CHANS or $IRCPATH containing "foobar"
 # i 42 # launch jsii with channel in $CHANS that looks like "42_#channelname"
