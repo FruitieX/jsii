@@ -42,7 +42,7 @@ fi
 
 # search in $IRCPATH
 if [[ $CHANNEL == "" || $CHANNEL == $(echo $CHANS) ]]; then
-	CHANNEL=$(find $IRCPATH -type l -iregex ".*${1}.*" | head -n1)
+	CHANNEL=$(find $IRCPATH -iregex ".*${1}.*" | head -n1)
 	# if still not found
 	if [[ $CHANNEL == "" || $CHANNEL == $(echo $CHANS) ]]; then
 		echo "Channel matching search criteria not found!"

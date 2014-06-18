@@ -27,14 +27,14 @@ var openChan = function(filePath) {
 	var file = fs.readFileSync(outFileName, 'utf8');
 	var inFile = fs.openSync(inFileName, 'a');
 
-	var bn = path.basename(filePath);
-	var num_s = bn.substring(0, bn.indexOf('_'));
+	var basename = path.basename(filePath);
+	var num_s = basename.substring(0, basename.indexOf('_'));
 	var num = "";
 	if(num_s !== "") {
 		num_s = ' ' + num_s + ' ';
 		num = numColor(num_s);
 	}
-	var chan_s = ' ' + bn.substring(bn.indexOf('_') + 1, bn.length) + ' ';
+	var chan_s = ' ' + basename.substring(basename.indexOf('_') + 1, basename.length) + ' ';
 	var chan = chanColor(chan_s);
 	var chan_insert = chanInsertColor(chan_s);
 
@@ -295,9 +295,15 @@ var openChan = function(filePath) {
 
 	rli.setPrompt(num_s + chan_s + ' ');
 	rli.on('line', function(cmd) {
-		var msg = new Buffer(cmd + '\n', 'utf8');
 		redraw();
 		printPrompt(true);
+
+		var msg_s = cmd;
+		if(msg_s.substring(0, 3) === '/bl') {
+			msg_s = "/privmsg *backlog " + chan_s + msg_s.substring(4);
+		}
+
+		var msg = new Buffer(msg_s + '\n', 'utf8');
 		fs.writeSync(inFile, msg, 0, msg.length, null);
 	});
 
