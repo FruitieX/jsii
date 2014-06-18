@@ -88,9 +88,6 @@ if [[ -z "$2" ]]; then
 			retval=$?
 		fi
 	done
-elif [[ "$2" == "/u" ]]; then
-	# urlview
-	urlview $CHANNEL/out
 else
 	# multiple args passed, send rest of args ($2 ->) to channel
 	shift; echo "$@" >> $CHANNEL/in
