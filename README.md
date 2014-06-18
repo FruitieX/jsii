@@ -1,7 +1,7 @@
 jsii
 ====
 
-node.js wrapper around the ii irc client
+node.js user interface for the ii irc client with vim-like keybindings. Takes as first argument a directory where it reads/writes out/in files.
 
 Setup
 -----
