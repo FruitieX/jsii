@@ -174,6 +174,8 @@ var openChan = function(filePath) {
 	var redraw = function() {
 		// clear prompt, then move cursor to beginning of prompt
 		clearPrompt();
+		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
 		var start = 0;
 		while (start < file.length) {
