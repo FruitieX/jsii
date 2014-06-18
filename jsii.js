@@ -204,10 +204,10 @@ var openChan = function(filePath) {
 		if(key == '\u0003') process.exit();
 	});
 	process.stdin.on('data', function(key) {
-		// next channel
-		if(key.toString('hex') === '1b6c') process.exit(1);
 		// previous channel
-		if(key.toString('hex') === '1b68') process.exit(2);
+		if(key.toString('hex') === '1b68') process.exit(10);
+		// next channel
+		if(key.toString('hex') === '1b6c') process.exit(11);
 
 		// DEBUG: use this to find the keycodes
 		//console.log(key.toString('hex'));
