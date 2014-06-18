@@ -326,6 +326,8 @@ var openChan = function(filePath) {
 					}
 				}
 			}
+
+			return;
 		} else if (msg_s === '/u' || msg_s.substring(0, 3) === '/u ') { // open url
 			var skip = parseInt(msg_s.substring(3)) | 0;
 			var splitFile = file.split('\n');
