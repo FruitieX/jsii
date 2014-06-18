@@ -271,10 +271,11 @@ var openChan = function(filePath) {
 
 			// move cursor back to where it was:
 			// down
-			if(num_s.length + chan_s.length + 1 + cursorPos > process.stdout.columns)
+			if((num_s.length + chan_s.length + 1 + cursorPos) >= process.stdout.columns)
 				process.stdout.write('\033[' + Math.floor((num_s.length + chan_s.length + 1 + cursorPos) / process.stdout.columns) + 'B');
 			// right
-			process.stdout.write('\033[' + (num_s.length + chan_s.length + 1 + cursorPos) % process.stdout.columns + 'C');
+			if((num_s.length + chan_s.length + 1 + cursorPos) % process.stdout.columns)
+				process.stdout.write('\033[' + (num_s.length + chan_s.length + 1 + cursorPos) % process.stdout.columns + 'C');
 		});
 	});
 
