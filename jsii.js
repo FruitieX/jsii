@@ -172,8 +172,7 @@ var openChan = function(filePath) {
 
 	// log entire file
 	var redraw = function() {
-		// clear prompt, then move cursor to beginning of prompt
-		clearPrompt();
+		process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
 		var inputLength = num_s.length + chan_s.length + rli.line.length;
 		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
