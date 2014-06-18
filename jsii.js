@@ -309,6 +309,23 @@ var openChan = function(filePath) {
 		var msg_s = cmd;
 		if(msg_s === '/bl' || msg_s.substring(0, 4) === '/bl ') { // request backlog
 			msg_s = "/privmsg *backlog " + chan_s + msg_s.substring(4);
+		} else if (msg_s === '/ul') { // list urls in buffer
+			var current = 0;
+			var splitFile = file.split('\n');
+
+			var url;
+			for (var i = splitFile.length - 1; i >= 0; i--) {
+				var words = splitFile[i].split(' ');
+
+				for (var j = words.length - 1; j >= 0; j--) {
+					var res = url_re.exec(words[j]);
+					if(res) {
+						url = res[0];
+						printLinePromptCursor("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
+						current++;
+					}
+				}
+			}
 		} else if (msg_s === '/u' || msg_s.substring(0, 3) === '/u ') { // open url
 			var skip = parseInt(msg_s.substring(3)) | 0;
 			var splitFile = file.split('\n');
