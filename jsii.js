@@ -187,7 +187,8 @@ var openChan = function(filePath) {
 			start = end + 1;
 		}
 		// make room for the prompt and redraw it
-		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		// TODO: why should this be rli.cursor
+		var inputLength = num_s.length + chan_s.length + 1 + rli.cursor;
 		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
 			process.stdout.write('\n');
 		}
