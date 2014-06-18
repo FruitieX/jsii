@@ -61,7 +61,7 @@ if [[ -z "$2" ]]; then
 	while [ $retval -ne 0 ]; do
 		# first run
 		if [ $retval -eq -1 ]; then
-			node ~/src/jsii/jsii.js $CHANNEL
+			node ~/src/jsii/jsii.js "$CHANNEL"
 			retval=$?
 		# channel--
 		elif [ $retval -eq 10 ]; then
