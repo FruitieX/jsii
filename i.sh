@@ -22,19 +22,27 @@
 IRCPATH=$HOME/irc
 CHANS=$IRCPATH/chans # "favorite" channels
 
+MAXCHAN=$(find $CHANS/* | sed -e 's#.*/##' -e 's/_.*//' | sort -n | tail -n1)
+
 num_regex='^[0-9]+$'
-num=$(echo $1 | grep -o -E $num_regex)
+# no arguments?
+if [[ $1 == "" ]]; then
+	num=1
+else
+	num=$(echo $1 | grep -o -E $num_regex)
+fi
+
 # search by number in $CHANS
 if [[ $num != "" ]]; then
-	CHANNEL=$(find $CHANS -iregex ".*/${num}_.*" | head -n1)
+	CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
 # search by name in $CHANS
 else
-	CHANNEL=$(find $CHANS -iregex ".*${1}.*" | head -n1)
+	CHANNEL=$(find $CHANS -type l -iregex ".*${1}.*" | head -n1)
 fi
 
 # search in $IRCPATH
 if [[ $CHANNEL == "" || $CHANNEL == $(echo $CHANS) ]]; then
-	CHANNEL=$(find $IRCPATH -iregex ".*${1}.*" | head -n1)
+	CHANNEL=$(find $IRCPATH -type l -iregex ".*${1}.*" | head -n1)
 	# if still not found
 	if [[ $CHANNEL == "" || $CHANNEL == $(echo $CHANS) ]]; then
 		echo "Channel matching search criteria not found!"
@@ -45,7 +53,7 @@ fi
 if [[ -z "$2" ]]; then
 	# no additional args passed, launch ui
 	# parse number from $CHANNEL, we might not have it yet
-	num=$(echo $CHANNEL | sed -e 's#.*/##' | sed -e 's/_.*//')
+	num=$(echo $CHANNEL | sed -e 's#.*/##' -e 's/_.*//')
 	if [[ $num == "" ]]; then
 		num=0
 	fi
@@ -58,18 +66,24 @@ if [[ -z "$2" ]]; then
 		# channel--
 		elif [[ $retval == 10 ]]; then
 			num=$(($num - 1))
-			CHANNEL=$(find $CHANS -iregex ".*/${num}_.*" | head -n1)
+			if [[ $num == 0 ]]; then
+				num=$MAXCHAN
+			fi
+			CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
 			node ~/src/jsii/jsii.js $CHANNEL
 			retval=$?
 		# channel++
 		elif [[ $retval == 11 ]]; then
 			num=$(($num + 1))
-			CHANNEL=$(find $CHANS -iregex ".*/${num}_.*" | head -n1)
+			if [[ $num > $MAXCHAN ]]; then
+				num=1
+			fi
+			CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
 			node ~/src/jsii/jsii.js $CHANNEL
 			retval=$?
 		else
 			num=$retval
-			CHANNEL=$(find $CHANS -iregex ".*/${num}_.*" | head -n1)
+			CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
 			node ~/src/jsii/jsii.js $CHANNEL
 			retval=$?
 		fi
@@ -78,8 +92,6 @@ elif [[ "$2" == "/u" ]]; then
 	# urlview
 	urlview $CHANNEL/out
 else
-	# args passed, send rest of args to channel
-	# parse number from $CHANNEL, we might not have it yet
-	num=$(echo $CHANNEL | sed -e 's#.*/##' | sed -e 's/_.*//')
+	# multiple args passed, send rest of args ($2 ->) to channel
 	shift; echo "$@" >> $CHANNEL/in
 fi
