@@ -58,33 +58,33 @@ if [[ -z "$2" ]]; then
 		num=0
 	fi
 	retval=-1
-	while [[ $retval != 0 ]]; do
+	while [ $retval -ne 0 ]; do
 		# first run
-		if [[ $retval == -1 ]]; then
+		if [ $retval -eq -1 ]; then
 			node ~/src/jsii/jsii.js $CHANNEL
 			retval=$?
 		# channel--
-		elif [[ $retval == 10 ]]; then
+		elif [ $retval -eq 10 ]; then
 			num=$(($num - 1))
-			if [[ $num == 0 ]]; then
+			if [ $num -eq 0 ]; then
 				num=$MAXCHAN
 			fi
 			CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
-			node ~/src/jsii/jsii.js $CHANNEL
+			node ~/src/jsii/jsii.js "$CHANNEL"
 			retval=$?
 		# channel++
-		elif [[ $retval == 11 ]]; then
+		elif [ $retval -eq 11 ]; then
 			num=$(($num + 1))
-			if [[ $num > $MAXCHAN ]]; then
+			if [ $num -gt $MAXCHAN ]; then
 				num=1
 			fi
 			CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
-			node ~/src/jsii/jsii.js $CHANNEL
+			node ~/src/jsii/jsii.js "$CHANNEL"
 			retval=$?
 		else
 			num=$retval
 			CHANNEL=$(find $CHANS -type l -iregex ".*/${num}_.*" | head -n1)
-			node ~/src/jsii/jsii.js $CHANNEL
+			node ~/src/jsii/jsii.js "$CHANNEL"
 			retval=$?
 		fi
 	done
