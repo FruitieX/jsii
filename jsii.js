@@ -5,7 +5,7 @@ var fileBuf = 4096; // how many characters of file to remember
 var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
-var url_re = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
+var url_re = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
 var ansi_escape_re = /\x1b[^m]*m/;
 var readline = require('readline');
 var fs = require('fs');
