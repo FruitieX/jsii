@@ -6,6 +6,7 @@ var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
 var url_re = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/;
+var url_ignore_nicks = [ 'BoWa' ];
 var ansi_escape_re = /\x1b[^m]*m/;
 var readline = require('readline');
 var fs = require('fs');
@@ -333,7 +334,15 @@ var openChan = function(filePath) {
 
 			var url;
 			for (var i = splitFile.length - 1; i >= 0; i--) {
+				// TODO: put this mess into a function
+				// remove timestamps
+				splitFile[i] = splitFile[i].replace(/^([^ ]+ ){2}/, '');
 				var words = splitFile[i].split(' ');
+				// nick is first whitespace separated word after timestamp
+				var nick = words[0].substring(1, words[0].length - 1);
+				// ignore select bots
+				if(url_ignore_nicks.indexOf(nick) !== -1)
+					continue;
 
 				for (var j = words.length - 1; j >= 0; j--) {
 					var res = url_re.exec(words[j]);
@@ -352,7 +361,15 @@ var openChan = function(filePath) {
 
 			var url;
 			for (var i = splitFile.length - 1; i >= 0; i--) {
+				// TODO: put this mess into a function
+				// remove timestamps
+				splitFile[i] = splitFile[i].replace(/^([^ ]+ ){2}/, '');
 				var words = splitFile[i].split(' ');
+				// nick is first whitespace separated word after timestamp
+				var nick = words[0].substring(1, words[0].length - 1);
+				// ignore select bots
+				if(url_ignore_nicks.indexOf(nick) !== -1)
+					continue;
 
 				for (var j = words.length - 1; j >= 0; j--) {
 					var res = url_re.exec(words[j]);
