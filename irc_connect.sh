@@ -4,6 +4,7 @@
 # IRCPASS_FREENODE="awesomesauce"
 source ~/.ircpw
 
+# irc server and port
 # NOTE: I use an irc bouncer, so the server is always the same
 # modifying the script for multiple servers should be simple enough though
 SERVER=server.org
@@ -12,7 +13,9 @@ PORT=6667
 RECONNECT_DELAY=3
 NICK="JsiiTestUser"
 
+# path to the ii binary
 II=$HOME/src/ii/ii
+# path where ii should put the irc directory tree
 IRCPATH=$HOME/irc
 
 connect() {
