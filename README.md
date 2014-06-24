@@ -14,7 +14,7 @@ Setup (already have ii running / keep it simple)
 Full setup
 ----------
 
-1. Install [ii](http://tools.suckless.org/ii/)
+1. [Install ii](http://tools.suckless.org/ii/)
 2. Edit `irc_connect.sh` and run the script. Recommended to autorun it in eg.
    your `.xinitrc` or using a systemd service.
 3. When you have `ii` running, edit `irc_symlink.sh` with your favorite
