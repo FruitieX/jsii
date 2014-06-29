@@ -38,9 +38,14 @@ var openChan = function(filePath) {
 		num_s = ' ' + num_s + ' ';
 		num = numColor(num_s);
 	}
-	var chan_s = ' ' + basename.substring(basename.indexOf('_') + 1, basename.length) + ' ';
-	var chan = chanColor(chan_s);
-	var chan_insert = chanInsertColor(chan_s);
+	var chan_s = basename.substring(basename.indexOf('_') + 1, basename.length);
+	var chan_shortened;
+	if(chan_s.charAt(0) === '!')
+		chan_shortened = ' !' + chan_s.substring(6, chan_s.length) + ' ';
+	else
+		chan_shortened = ' ' + chan_s + ' ';
+	var chan = chanColor(chan_shortened);
+	var chan_insert = chanInsertColor(chan_shortened);
 
 	// prompt printing function, assumes cursor is inside the prompt where node
 	// readline expects it to be. cursor position is restored after printing the
@@ -52,7 +57,7 @@ var openChan = function(filePath) {
 		process.stdout.write('\r'); // move cursor to beginning of line
 
 		// for multiline inputs move cursor up to prompt before printing
-		var inputLength = num_s.length + chan_s.length + rli.cursor + 1;
+		var inputLength = num_s.length + chan_shortened.length + rli.cursor + 1;
 		if(inputLength + 1 > process.stdout.columns)
 			process.stdout.write('\033[' + Math.floor(inputLength / process.stdout.columns) + 'A');
 
@@ -68,10 +73,10 @@ var openChan = function(filePath) {
 
 	var clearPrompt = function() {
 		// move cursor to beginning of prompt first
-		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		var inputLength = num_s.length + chan_shortened.length + rli.line.length;
 		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 		// clear channel name + prompt
-		process.stdout.write(Array(num_s.length + chan_s.length + 1 + rli.line.length + 1).join(' '));
+		process.stdout.write(Array(num_s.length + chan_shortened.length + 1 + rli.line.length + 1).join(' '));
 	};
 
 	// prints line at current terminal cursor position
@@ -184,7 +189,7 @@ var openChan = function(filePath) {
 	// redraw screen
 	var redraw = function() {
 		process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
-		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		var inputLength = num_s.length + chan_shortened.length + rli.line.length;
 		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
 		var start = 0;
@@ -198,7 +203,7 @@ var openChan = function(filePath) {
 		}
 		// make room for the prompt
 		// TODO: why should this be rli.cursor
-		var inputLength = num_s.length + chan_s.length + 1 + rli.cursor;
+		var inputLength = num_s.length + chan_shortened.length + 1 + rli.cursor;
 		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
 			process.stdout.write('\n');
 		}
@@ -259,7 +264,7 @@ var openChan = function(filePath) {
 
 		// clear prompt, then move cursor to beginning of prompt
 		clearPrompt();
-		var inputLength = num_s.length + chan_s.length + rli.line.length;
+		var inputLength = num_s.length + chan_shortened.length + rli.line.length;
 		process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
 		// print line
@@ -269,7 +274,7 @@ var openChan = function(filePath) {
 		// TODO: WHY should we use rli.cursor not rli.line.length here?
 		// otherwise we get too many newlines when cursor is positioned on an input
 		// line != the last one. IDGI. :(
-		inputLength = num_s.length + chan_s.length + rli.cursor;
+		inputLength = num_s.length + chan_shortened.length + rli.cursor;
 		for(var i = 0; i < Math.floor(inputLength / process.stdout.columns); i++) {
 			process.stdout.write('\n');
 		}
@@ -301,22 +306,22 @@ var openChan = function(filePath) {
 		// hack: print our prompt after node readline prints its prompt ;)
 		setTimeout(function() {
 			printPrompt(true);
-			var inputLength = num_s.length + chan_s.length + 1 + rli.line.length;
+			var inputLength = num_s.length + chan_shortened.length + 1 + rli.line.length;
 			// move cursor to beginning of first prompt line
 			process.stdout.write('\033[' + Math.floor(process.stdout.rows - inputLength / process.stdout.columns + 1) + ';0H');
 
 			// move cursor back to where it was:
 			// down
-			if((num_s.length + chan_s.length + 1 + cursorPos) >= process.stdout.columns)
-				process.stdout.write('\033[' + Math.floor((num_s.length + chan_s.length + 1 + cursorPos) / process.stdout.columns) + 'B');
+			if((num_s.length + chan_shortened.length + 1 + cursorPos) >= process.stdout.columns)
+				process.stdout.write('\033[' + Math.floor((num_s.length + chan_shortened.length + 1 + cursorPos) / process.stdout.columns) + 'B');
 			// right
-			if((num_s.length + chan_s.length + 1 + cursorPos) % process.stdout.columns)
-				process.stdout.write('\033[' + (num_s.length + chan_s.length + 1 + cursorPos) % process.stdout.columns + 'C');
+			if((num_s.length + chan_shortened.length + 1 + cursorPos) % process.stdout.columns)
+				process.stdout.write('\033[' + (num_s.length + chan_shortened.length + 1 + cursorPos) % process.stdout.columns + 'C');
 		});
 	});
 
 	// parse some select commands from input line
-	rli.setPrompt(num_s + chan_s + ' ');
+	rli.setPrompt(num_s + chan_shortened + ' ');
 	rli.on('line', function(cmd) {
 		redraw();
 		printPrompt(true);
