@@ -18,6 +18,9 @@ II=$HOME/src/ii/ii
 # path where ii should put the irc directory tree
 IRCPATH=$HOME/irc
 
+killall irc_connect.sh
+killall ii
+
 connect() {
 	while true; do
 		IRCPASS="$2" $II -i $IRCPATH/$1 -s $SERVER -p $PORT -k "IRCPASS" -n $NICK
