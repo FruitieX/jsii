@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 var clc = require('cli-color');
 var maxNickLen = 12;
-var fileBuf = 8192; // how many characters of file to remember
+var fileBufSize = 8192; // how many characters of file to remember
 var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
@@ -28,8 +28,14 @@ var openChan = function(filePath) {
 
 	var outFileName = filePath + '/out';
 	var inFileName = filePath + '/in';
-	var file = fs.readFileSync(outFileName, 'utf8');
+	var outFile = fs.openSync(outFileName, 'r+');
 	var inFile = fs.openSync(inFileName, 'a');
+
+	var outFileStat = fs.statSync(outFileName);
+
+	var file = new Buffer(fileBufSize);
+	var bytesRead = fs.readSync(outFile, file, 0, fileBufSize, outFileStat.size - fileBufSize);
+	file = file.toString('utf8', 0, bytesRead);
 
 	var basename = path.basename(filePath);
 	var num_s = basename.substring(0, basename.indexOf('_'));
@@ -209,9 +215,9 @@ var openChan = function(filePath) {
 		}
 	};
 
-	// limit file to size fileBuf
-	if(file.length >= fileBuf) {
-		file = file.substr(file.length - fileBuf, file.length);
+	// limit file to size fileBufSize
+	if(file.length >= fileBufSize) {
+		file = file.substr(file.length - fileBufSize, file.length);
 		file = file.substr(file.indexOf("\n") + 1, file.length);
 	}
 
@@ -288,9 +294,9 @@ var openChan = function(filePath) {
 	out = new Tail(outFileName);
 	out.on('line', function(data) {
 		file += data + '\n';
-		// limit file to size fileBuf
-		if(file.length >= fileBuf) {
-			file = file.substr(file.length - fileBuf, file.length);
+		// limit file to size fileBufSize
+		if(file.length >= fileBufSize) {
+			file = file.substr(file.length - fileBufSize, file.length);
 			file = file.substr(file.indexOf("\n") + 1, file.length);
 		}
 
