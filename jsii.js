@@ -334,7 +334,7 @@ var openChan = function(filePath) {
 
 		var msg_s = cmd;
 		if(msg_s === '/bl' || msg_s.substring(0, 4) === '/bl ') { // request backlog
-			msg_s = "/privmsg *backlog " + chan_s + msg_s.substring(4);
+			msg_s = "/privmsg *backlog " + chan_s + ' ' + msg_s.substring(4);
 		} else if(msg_s.substring(0, 4) === '/me ') { // irc ACTION message
 			msg_s = "\001ACTION " + msg_s.substring(4);
 		} else if(msg_s === '/names') { // request nick list
