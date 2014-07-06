@@ -15,9 +15,8 @@ var spawn = require('child_process').spawn;
 var rlv = require('readline-vim');
 
 var separatorColor = clc.xterm(239);
-var numColor = clc.xterm(232).bgXterm(255);
-var chanColor = clc.xterm(255).bgXterm(239);
-var chanInsertColor = clc.xterm(232).bgXterm(255);
+var chanColor = clc.xterm(242);
+var chanInsertColor = clc.xterm(252);
 var myNickColor = 1;
 var hilightColor = 3;
 var actionColor = 10;
@@ -41,15 +40,15 @@ var openChan = function(filePath) {
 	var num_s = basename.substring(0, basename.indexOf('_'));
 	var num = "";
 	if(num_s !== "") {
-		num_s = ' ' + num_s + ' ';
-		num = numColor(num_s);
+		num = num_s;
 	}
+
 	var chan_s = basename.substring(basename.indexOf('_') + 1, basename.length);
 	var chan_shortened;
 	if(chan_s.charAt(0) === '!')
-		chan_shortened = ' !' + chan_s.substring(6, chan_s.length) + ' ';
+		chan_shortened = ' !' + chan_s.substring(6, chan_s.length);
 	else
-		chan_shortened = ' ' + chan_s + ' ';
+		chan_shortened = ' ' + chan_s;
 	var chan = chanColor(chan_shortened);
 	var chan_insert = chanInsertColor(chan_shortened);
 
