@@ -146,6 +146,9 @@ var openChan = function(filePath) {
 		line = line.replace(/�/g, 'ä');
 		line = line.replace(/�/g, 'ö');
 
+		// get rid of tabs in irc messages
+		line = line.replace(/\t/g, '    ');
+
 		if(line.match(hilight_re))
 			hilight = true;
 
