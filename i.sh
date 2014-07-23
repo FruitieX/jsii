@@ -88,7 +88,7 @@ if [[ -z "$2" ]]; then
 			retval=$?
 		fi
 	done
-else
+#else
 	# multiple args passed, send rest of args ($2 ->) to channel
-	shift; echo "$@" >> $CHANNEL/in
+#	shift; echo "$@" >> $CHANNEL/in
 fi
