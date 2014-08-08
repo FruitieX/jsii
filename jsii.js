@@ -11,7 +11,7 @@ var ansi_escape_re = /\x1b[^m]*m/;
 var fs = require('fs');
 var spawn = require('child_process').spawn;
 
-var vimrl = require('./vim-readline');
+var vimrl = require('vimrl');
 
 var separatorColor = clc.xterm(239);
 var chanColor = clc.xterm(242);
