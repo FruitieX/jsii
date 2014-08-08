@@ -51,8 +51,8 @@ var openChan = function(filePath) {
     var chan = chanColor(chan_shortened);
     var chan_insert = chanInsertColor(chan_shortened);
 
-    var prompt_s = chan_shortened + ' > ';
-    var prompt_s_ins = chan_shortened + ' i ';
+    var prompt_s = num_s + chan_shortened + ' > ';
+    var prompt_s_ins = num_s + chan_shortened + ' i ';
 
     // prints line at current terminal cursor position
     var printLine = function(line) {
