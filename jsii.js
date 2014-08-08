@@ -51,8 +51,13 @@ var openChan = function(filePath) {
     var chan = chanColor(chan_shortened);
     var chan_insert = chanInsertColor(chan_shortened);
 
-    var prompt_s = num_s + chan_shortened + ' > ';
-    var prompt_s_ins = num_s + chan_shortened + ' i ';
+    var prompt_s = num_s + chan_shortened;
+    var prompt_s_len = prompt_s.length + 3;
+    prompt_s += chanColor(' > ');
+
+    var prompt_s_ins = num_s + chan_shortened;
+    var prompt_s_ins_len = prompt_s_ins.length + 3;
+    prompt_s_ins += chanInsertColor(' > ');
 
     // prints line at current terminal cursor position
     var printLine = function(line) {
@@ -255,9 +260,9 @@ var openChan = function(filePath) {
     // parse some select commands from input line
     readline = vimrl({
         normalPrompt: prompt_s,
-        normalPromptLen: prompt_s.length,
+        normalPromptLen: prompt_s_len,
         insertPrompt: prompt_s_ins,
-        insertPromptLen: prompt_s_ins.length
+        insertPromptLen: prompt_s_ins_len
     }, function(line) {
         redraw();
 
