@@ -59,8 +59,15 @@ var openChan = function(filePath) {
     var prompt_s_ins_len = prompt_s_ins.length + 3;
     prompt_s_ins += chanInsertColor(' > ');
 
-    // prints line at current terminal cursor position
+    var realCursorReset = function() {
+        process.stdout.write('\033[' + process.stdout.rows + ';0f');
+    };
+
+    // prints line from lower left corner
     var printLine = function(line) {
+        // move cursor
+        realCursorReset();
+
         var hilight = false;
         var action = false;
 
@@ -292,7 +299,8 @@ var openChan = function(filePath) {
                     var res = url_re.exec(words[j]);
                     if(res) {
                         url = res[0];
-                        printLine_restorePrompt("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
+                        printLine("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
+                        readline.redraw();
                         current++;
                     }
                 }
@@ -337,9 +345,11 @@ var openChan = function(filePath) {
                     stdio: [ 'ignore', 'ignore' , 'ignore' ]
                 });
                 child.unref();
-                printLine_restorePrompt("xxxx-xx-xx xx:xx <***> URL " + (parseInt(line.substring(3)) | 0) +  " opened: " + url);
+                printLine("xxxx-xx-xx xx:xx <***> URL " + (parseInt(line.substring(3)) | 0) +  " opened: " + url);
+                readline.redraw();
             } else {
-                printLine_restorePrompt("xxxx-xx-xx xx:xx <***> No URL found");
+                printLine("xxxx-xx-xx xx:xx <***> No URL found");
+                readline.redraw();
             }
 
             return;
