@@ -59,14 +59,19 @@ var openChan = function(filePath) {
     var prompt_s_ins_len = prompt_s_ins.length + 3;
     prompt_s_ins += chanInsertColor(' > ');
 
-    var realCursorReset = function() {
+    var cursorReset = function() {
         process.stdout.write('\033[' + process.stdout.rows + ';0f');
+    };
+    var clearLine = function() {
+        process.stdout.write('\033[K');
     };
 
     // prints line from lower left corner
     var printLine = function(line) {
-        // move cursor
-        realCursorReset();
+        // move cursor to lower left
+        cursorReset();
+        // clear current line
+        clearLine();
 
         var hilight = false;
         var action = false;
