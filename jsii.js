@@ -350,6 +350,8 @@ var openChan = function(filePath) {
         fs.writeSync(inFile, msg, 0, msg.length, null);
     });
 
+    readline.gotoInsertMode();
+
     // clear terminal and print file contents at launch
     process.stdout.write('\u001B[2J\u001B[0;0f');
     redraw();
