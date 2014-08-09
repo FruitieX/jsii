@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-var clc = require('cli-color');
 var maxNickLen = 12;
-var fileBufSize = 8192; // how many characters of file to remember
+var fileBufSize = 8192; // how many characters of file to remember at most
 var path = require('path');
 var myNick = "FruitieX";
 var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
@@ -13,9 +12,7 @@ var spawn = require('child_process').spawn;
 
 var vimrl = require('vimrl');
 
-var separatorColor = clc.xterm(239);
-var chanColor = clc.xterm(242);
-var chanInsertColor = clc.xterm(252);
+var separatorColor = 239;
 var myNickColor = 1;
 var hilightColor = 3;
 var actionColor = 10;
@@ -36,22 +33,16 @@ var bytesRead = fs.readSync(outFile, file, 0, fileBufSize, outFileStat.size - fi
 file = file.toString('utf8', 0, bytesRead);
 
 var basename = path.basename(filePath);
-var num_s = basename.substring(0, basename.indexOf('_'));
-var num = "";
-if(num_s !== "") {
-    num = num_s;
-}
+var chanNumber = basename.substring(0, basename.indexOf('_'));
 
-var chan_s = basename.substring(basename.indexOf('_') + 1, basename.length);
-var chan_shortened;
-if(chan_s.charAt(0) === '!')
-    chan_shortened = ' !' + chan_s.substring(6, chan_s.length);
+var chanFullName = basename.substring(basename.indexOf('_') + 1, basename.length);
+var chanShortened;
+if(chanFullName.charAt(0) === '!')
+    chanShortened = ' !' + chanFullName.substring(6, chanFullName.length);
 else
-    chan_shortened = ' ' + chan_s;
-var chan = chan_shortened;
-var chan_insert = chan_shortened;
+    chanShortened = ' ' + chanFullName;
 
-var normalPrompt = num_s + chan_shortened + ' > ';
+var normalPrompt = chanNumber + chanShortened + ' > ';
 
 // fill with empty strings
 var normalPromptColors = [];
@@ -61,7 +52,7 @@ for (var i = 0; i < normalPrompt.length; i++) {
 // 2nd last char should be grey
 normalPromptColors[normalPrompt.length - 2] = '\033[38;5;242m';
 
-var insertPrompt = num_s + chan_shortened + ' > ';
+var insertPrompt = chanNumber + chanShortened + ' > ';
 
 // fill with empty strings
 var insertPromptColors = [];
@@ -135,9 +126,12 @@ var printLine = function(line) {
     nick = nick.substr(0, maxNickLen);
     // align nicks and print
     process.stdout.write(Array(maxNickLen - nick.length + 1).join(' '));
-    process.stdout.write(clc.xterm(clrnick)(nick) + separatorColor(':'));
+    process.stdout.write('\033[38;5;' + clrnick + 'm' + nick + // set nick color + nick
+                         '\033[38;5;' + separatorColor + ':' + // set separator color + separator
+                         '\033[000m'); // reset colors
     process.stdout.write(' ');
 
+    // remove funny characters
     line = line.replace(ansi_escape_re, '');
 
     // 'fix' encoding of people not using utf-8...
@@ -187,8 +181,8 @@ var printLine = function(line) {
         if (i > 0)
             process.stdout.write(Array(process.stdout.columns - availWidth + 1).join(' '));
 
-        process.stdout.write(clc.xterm(textColor)(curLine));
-        process.stdout.write('\n');
+        process.stdout.write('\033[38;5;' + textColor + 'm' + curLine + // set text color + text
+                             '\033[000m' + '\n'); // reset colors + newline
         i++;
     }
 };
@@ -292,11 +286,11 @@ readline = vimrl({
     redraw();
 
     if(line === '/bl' || line.substring(0, 4) === '/bl ') { // request backlog
-        line = "/privmsg *backlog " + chan_s + ' ' + line.substring(4);
+        line = "/privmsg *backlog " + chanFullName + ' ' + line.substring(4);
     } else if(line.substring(0, 4) === '/me ') { // irc ACTION message
         line = "\001ACTION " + line.substring(4);
     } else if(line === '/names') { // request nick list
-        line = "/names " + chan_s;
+        line = "/names " + chanFullName;
     } else if (line === '/ul') { // list urls in buffer
         var current = 0;
         var splitFile = file.split('\n');

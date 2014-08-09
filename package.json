@@ -5,7 +5,6 @@
 	"main" : "jsii.js",
 	"dependencies" : {
 		"vimrl" : "git://github.com/FruitieX/node-vimrl.git",
-		"cli-color" : ">=0.3.2",
 		"tail" : ">=0.3.5",
 		"spawn-sync" : "git://github.com/FruitieX/spawn-sync"
 	}
