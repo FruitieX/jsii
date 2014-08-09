@@ -1,3 +1,8 @@
+// jsii configuration
+//
+// NOTE that most self.* values are mandatory and jsii won't work if they aren't
+// defined!
+//
 var path = require('path');
 
 module.exports = function(filePath) {
