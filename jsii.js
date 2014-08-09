@@ -260,7 +260,8 @@ var openChan = function(filePath) {
             file = file.substr(file.indexOf("\n") + 1, file.length);
         }
 
-        redraw();
+        printLine(data);
+        readline.redraw();
     });
 
     // handle terminal resize
