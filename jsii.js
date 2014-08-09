@@ -208,8 +208,8 @@ process.stdin.setRawMode(true);
 
 // handle keyboard events
 process.stdin.on('readable', function() {
-    var input = process.stdin.read();
-    if(input) {
+    var input;
+    while (null !== (input = process.stdin.read())) {
         // 'ctrl-c' = quit
         if(input == '\u0003') process.exit(0);
 
