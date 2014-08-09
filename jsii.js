@@ -1,66 +1,23 @@
 #!/usr/bin/env node
-var maxNickLen = 12;
-var fileBufSize = 8192; // how many characters of file to remember at most
-var path = require('path');
-var myNick = "FruitieX";
-var hilight_re = new RegExp(".*" + myNick + ".*", 'i');
-var url_re = /(^|\s)((https?:\/\/)[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?)/gi;
-var url_ignore_nicks = [ 'BoWa' ];
-var ansi_escape_re = /\x1b[^m]*m/;
 var fs = require('fs');
 var spawn = require('child_process').spawn;
-
 var vimrl = require('vimrl');
+var path = require('path');
 
-var separatorColor = 239;
-var myNickColor = 1;
-var hilightColor = 3;
-var actionColor = 10;
+var config = require('./config')(process.argv[2]);
 
-var filePath = process.argv[2];
 var out, rli, vim;
 var completions = [];
 
-var outFileName = filePath + '/out';
-var inFileName = filePath + '/in';
-var outFile = fs.openSync(outFileName, 'r+');
-var inFile = fs.openSync(inFileName, 'a');
+var outFile = fs.openSync(config.outFileName, 'r+');
+var inFile = fs.openSync(config.inFileName, 'a');
 
-var outFileStat = fs.statSync(outFileName);
+var outFileStat = fs.statSync(config.outFileName);
 
-var file = new Buffer(fileBufSize);
-var bytesRead = fs.readSync(outFile, file, 0, fileBufSize, outFileStat.size - fileBufSize);
+var file = new Buffer(config.fileBufSize);
+var bytesRead = fs.readSync(outFile, file, 0, config.fileBufSize, outFileStat.size - config.fileBufSize);
 file = file.toString('utf8', 0, bytesRead);
 
-var basename = path.basename(filePath);
-var chanNumber = basename.substring(0, basename.indexOf('_'));
-
-var chanFullName = basename.substring(basename.indexOf('_') + 1, basename.length);
-var chanShortened;
-if(chanFullName.charAt(0) === '!')
-    chanShortened = ' !' + chanFullName.substring(6, chanFullName.length);
-else
-    chanShortened = ' ' + chanFullName;
-
-var normalPrompt = chanNumber + chanShortened + ' > ';
-
-// fill with empty strings
-var normalPromptColors = [];
-for (var i = 0; i < normalPrompt.length; i++) {
-    normalPromptColors[i] = '';
-}
-// 2nd last char should be grey
-normalPromptColors[normalPrompt.length - 2] = '\033[38;5;242m';
-
-var insertPrompt = chanNumber + chanShortened + ' > ';
-
-// fill with empty strings
-var insertPromptColors = [];
-for (var i = 0; i < insertPrompt.length; i++) {
-    insertPromptColors[i] = '';
-}
-// 2nd last char should be white
-insertPromptColors[insertPrompt.length - 2] = '\033[38;5;252m';
 
 var cursorReset = function() {
     process.stdout.write('\033[' + process.stdout.rows + ';0f');
@@ -98,11 +55,11 @@ var printLine = function(line) {
     if(line.substring(0, 8) === "\001ACTION ") {
         line = nick + ' ' + line.substring(8);
         nick = '*';
-        clrnick = actionColor;
+        clrnick = config.actionColor;
         action = true;
     }
-    else if(nick === myNick) {
-        clrnick = myNickColor;
+    else if(nick === config.myNick) {
+        clrnick = config.myNickColor;
     } else {
         // nick color, avoids dark colors
         for(var i = 0; i < nick.length; i++) {
@@ -123,16 +80,16 @@ var printLine = function(line) {
     }
 
     // limit nicklen
-    nick = nick.substr(0, maxNickLen);
+    nick = nick.substr(0, config.maxNickLen);
     // align nicks and print
-    process.stdout.write(Array(maxNickLen - nick.length + 1).join(' '));
+    process.stdout.write(Array(config.maxNickLen - nick.length + 1).join(' '));
     process.stdout.write('\033[38;5;' + clrnick + 'm' + nick + // set nick color + nick
-                         '\033[38;5;' + separatorColor + ':' + // set separator color + separator
+                         '\033[38;5;' + config.separatorColor + ':' + // set separator color + separator
                          '\033[000m'); // reset colors
     process.stdout.write(' ');
 
     // remove funny characters
-    line = line.replace(ansi_escape_re, '');
+    line = line.replace(config.ansi_escape_re, '');
 
     // 'fix' encoding of people not using utf-8...
     line = line.replace(/�/g, 'å');
@@ -142,19 +99,19 @@ var printLine = function(line) {
     // get rid of tabs in irc messages
     line = line.replace(/\t/g, '    ');
 
-    if(line.match(hilight_re))
+    if(line.match(config.hilight_re))
         hilight = true;
 
     var textColor = 15;
-    if (nick === myNick)
-        textColor = myNickColor;
+    if (nick === config.myNick)
+        textColor = config.myNickColor;
     else if (action)
-        textColor = actionColor;
+        textColor = config.actionColor;
     else if (hilight)
-        textColor = hilightColor;
+        textColor = config.hilightColor;
 
     // separator takes up 1 char + whitespace
-    var availWidth = process.stdout.columns - maxNickLen - 2;
+    var availWidth = process.stdout.columns - config.maxNickLen - 2;
 
     var wrappedChars = 0;
     var i = 0;
@@ -205,8 +162,8 @@ var redraw = function() {
 };
 
 // limit file to size fileBufSize
-if(file.length >= fileBufSize) {
-    file = file.substr(file.length - fileBufSize, file.length);
+if(file.length >= config.fileBufSize) {
+    file = file.substr(file.length - config.fileBufSize, file.length);
     file = file.substr(file.indexOf("\n") + 1, file.length);
 }
 
@@ -257,12 +214,12 @@ return [hits, word]
 
 // watch file for changes
 Tail = require('tail').Tail;
-out = new Tail(outFileName);
+out = new Tail(config.outFileName);
 out.on('line', function(data) {
     file += data + '\n';
     // limit file to size fileBufSize
-    if(file.length >= fileBufSize) {
-        file = file.substr(file.length - fileBufSize, file.length);
+    if(file.length >= config.fileBufSize) {
+        file = file.substr(file.length - config.fileBufSize, file.length);
         file = file.substr(file.indexOf("\n") + 1, file.length);
     }
 
@@ -278,19 +235,19 @@ process.stdout.on('resize', function() {
 
 // parse some select commands from input line
 readline = vimrl({
-    normalPrompt: normalPrompt,
-    normalPromptColors: normalPromptColors,
-    insertPrompt: insertPrompt,
-    insertPromptColors: insertPromptColors
+    normalPrompt: config.normalPrompt,
+    normalPromptColors: config.normalPromptColors,
+    insertPrompt: config.insertPrompt,
+    insertPromptColors: config.insertPromptColors
 }, function(line) {
     redraw();
 
     if(line === '/bl' || line.substring(0, 4) === '/bl ') { // request backlog
-        line = "/privmsg *backlog " + chanFullName + ' ' + line.substring(4);
+        line = "/privmsg *backlog " + config.chanFullName + ' ' + line.substring(4);
     } else if(line.substring(0, 4) === '/me ') { // irc ACTION message
         line = "\001ACTION " + line.substring(4);
     } else if(line === '/names') { // request nick list
-        line = "/names " + chanFullName;
+        line = "/names " + config.chanFullName;
     } else if (line === '/ul') { // list urls in buffer
         var current = 0;
         var splitFile = file.split('\n');
@@ -304,11 +261,11 @@ readline = vimrl({
             // nick is first whitespace separated word after timestamp
             var nick = words[0].substring(1, words[0].length - 1);
             // ignore select bots
-            if(url_ignore_nicks.indexOf(nick) !== -1)
+            if(config.url_ignore_nicks.indexOf(nick) !== -1)
                 continue;
 
             for (var j = words.length - 1; j >= 0; j--) {
-                var res = url_re.exec(words[j]);
+                var res = config.url_re.exec(words[j]);
                 if(res) {
                     url = res[0];
                     printLine("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
@@ -332,11 +289,11 @@ readline = vimrl({
             // nick is first whitespace separated word after timestamp
             var nick = words[0].substring(1, words[0].length - 1);
             // ignore select bots
-            if(url_ignore_nicks.indexOf(nick) !== -1)
+            if(config.url_ignore_nicks.indexOf(nick) !== -1)
                 continue;
 
             for (var j = words.length - 1; j >= 0; j--) {
-                var res = url_re.exec(words[j]);
+                var res = config.url_re.exec(words[j]);
                 if(res) {
                     if(skip > 0) {
                         skip--;
