@@ -48,16 +48,28 @@ if(chan_s.charAt(0) === '!')
     chan_shortened = ' !' + chan_s.substring(6, chan_s.length);
 else
     chan_shortened = ' ' + chan_s;
-var chan = chanColor(chan_shortened);
-var chan_insert = chanInsertColor(chan_shortened);
+var chan = chan_shortened;
+var chan_insert = chan_shortened;
 
-var prompt_s = num_s + chan_shortened;
-var prompt_s_len = prompt_s.length + 3;
-prompt_s += chanColor(' > ');
+var normalPrompt = num_s + chan_shortened + ' > ';
 
-var prompt_s_ins = num_s + chan_shortened;
-var prompt_s_ins_len = prompt_s_ins.length + 3;
-prompt_s_ins += chanInsertColor(' > ');
+// fill with empty strings
+var normalPromptColors = [];
+for (var i = 0; i < normalPrompt.length; i++) {
+    normalPromptColors[i] = '';
+}
+// 2nd last char should be grey
+normalPromptColors[normalPrompt.length - 2] = '\033[38;5;242m';
+
+var insertPrompt = num_s + chan_shortened + ' > ';
+
+// fill with empty strings
+var insertPromptColors = [];
+for (var i = 0; i < insertPrompt.length; i++) {
+    insertPromptColors[i] = '';
+}
+// 2nd last char should be white
+insertPromptColors[insertPrompt.length - 2] = '\033[38;5;252m';
 
 var cursorReset = function() {
     process.stdout.write('\033[' + process.stdout.rows + ';0f');
@@ -272,10 +284,10 @@ process.stdout.on('resize', function() {
 
 // parse some select commands from input line
 readline = vimrl({
-    normalPrompt: prompt_s,
-    normalPromptLen: prompt_s_len,
-    insertPrompt: prompt_s_ins,
-    insertPromptLen: prompt_s_ins_len
+    normalPrompt: normalPrompt,
+    normalPromptColors: normalPromptColors,
+    insertPrompt: insertPrompt,
+    insertPromptColors: insertPromptColors
 }, function(line) {
     redraw();
 
