@@ -4,6 +4,11 @@ var spawn = require('child_process').spawn;
 var vimrl = require('vimrl');
 var path = require('path');
 
+// argv[2] must contain path to out / in files
+if(!process.argv[2]) {
+    console.log("ERROR: please provide a valid path!");
+    process.exit(0);
+}
 var config = require('./config')(process.argv[2]);
 
 var out, rli, vim;
@@ -11,30 +16,32 @@ var completions = [];
 
 var outFile = fs.openSync(config.outFileName, 'r+');
 var inFile = fs.openSync(config.inFileName, 'a');
-
 var outFileStat = fs.statSync(config.outFileName);
 
-var file = new Buffer(config.fileBufSize);
-var bytesRead = fs.readSync(outFile, file, 0, config.fileBufSize, outFileStat.size - config.fileBufSize);
-file = file.toString('utf8', 0, bytesRead);
+var backlog = new Buffer(config.fileBufSize);
+var bytesRead = fs.readSync(outFile, backlog, 0, config.fileBufSize, outFileStat.size - config.fileBufSize);
+backlog = backlog.toString('utf8', 0, bytesRead);
 
-
+// reset cursor to lower left corner
 var cursorReset = function() {
     process.stdout.write('\033[' + process.stdout.rows + ';0f');
 };
+// clear line where cursor currently is
 var clearLine = function() {
     process.stdout.write('\033[K');
 };
 
 // prints line from lower left corner
 var printLine = function(line) {
+    var i;
+
+    var hilight = false;
+    var action = false;
+
     // move cursor to lower left
     cursorReset();
     // clear current line
     clearLine();
-
-    var hilight = false;
-    var action = false;
 
     // remove timestamps
     line = line.replace(/^([^ ]+ ){2}/, '');
@@ -62,7 +69,7 @@ var printLine = function(line) {
         clrnick = config.myNickColor;
     } else {
         // nick color, avoids dark colors
-        for(var i = 0; i < nick.length; i++) {
+        for(i = 0; i < nick.length; i++) {
             clrnick += nick.charCodeAt(i);
         }
         clrnick = Math.pow(clrnick, 2) + clrnick * 2;
@@ -88,16 +95,10 @@ var printLine = function(line) {
                          '\033[000m'); // reset colors
     process.stdout.write(' ');
 
-    // remove funny characters
-    line = line.replace(config.ansi_escape_re, '');
-
-    // 'fix' encoding of people not using utf-8...
-    line = line.replace(/�/g, 'å');
-    line = line.replace(/�/g, 'ä');
-    line = line.replace(/�/g, 'ö');
-
-    // get rid of tabs in irc messages
-    line = line.replace(/\t/g, '    ');
+    for (i = 0; i < config.findAndReplace.length; i++) {
+        line = line.replace(config.findAndReplace[i][0],
+                            config.findAndReplace[i][1]);
+    }
 
     if(line.match(config.hilight_re))
         hilight = true;
@@ -114,7 +115,7 @@ var printLine = function(line) {
     var availWidth = process.stdout.columns - config.maxNickLen - 2;
 
     var wrappedChars = 0;
-    var i = 0;
+    i = 0;
 
     // terminal too small? don't print anything
     if(availWidth <= 5)
@@ -149,12 +150,12 @@ var redraw = function() {
     process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
 
     var start = 0;
-    while (start < file.length) {
-        var end = file.indexOf('\n', start);
+    while (start < backlog.length) {
+        var end = backlog.indexOf('\n', start);
         if(end === -1)
             break;
 
-        printLine(file.substring(start, end));
+        printLine(backlog.substring(start, end));
         start = end + 1;
     }
 
@@ -162,9 +163,9 @@ var redraw = function() {
 };
 
 // limit file to size fileBufSize
-if(file.length >= config.fileBufSize) {
-    file = file.substr(file.length - config.fileBufSize, file.length);
-    file = file.substr(file.indexOf("\n") + 1, file.length);
+if(backlog.length >= config.fileBufSize) {
+    backlog = backlog.substr(backlog.length - config.fileBufSize, backlog.length);
+    backlog = backlog.substr(backlog.indexOf("\n") + 1, backlog.length);
 }
 
 process.stdin.setRawMode(true);
@@ -216,11 +217,11 @@ return [hits, word]
 Tail = require('tail').Tail;
 out = new Tail(config.outFileName);
 out.on('line', function(data) {
-    file += data + '\n';
+    backlog += data + '\n';
     // limit file to size fileBufSize
-    if(file.length >= config.fileBufSize) {
-        file = file.substr(file.length - config.fileBufSize, file.length);
-        file = file.substr(file.indexOf("\n") + 1, file.length);
+    if(backlog.length >= config.fileBufSize) {
+        backlog = backlog.substr(backlog.length - config.fileBufSize, backlog.length);
+        backlog = backlog.substr(backlog.indexOf("\n") + 1, backlog.length);
     }
 
     printLine(data);
@@ -250,7 +251,7 @@ readline = vimrl({
         line = "/names " + config.chanFullName;
     } else if (line === '/ul') { // list urls in buffer
         var current = 0;
-        var splitFile = file.split('\n');
+        var splitFile = backlog.split('\n');
 
         var url;
         for (var i = splitFile.length - 1; i >= 0; i--) {
@@ -278,7 +279,7 @@ readline = vimrl({
         return;
     } else if (line === '/u' || line.substring(0, 3) === '/u ') { // open url
         var skip = parseInt(line.substring(3)) | 0;
-        var splitFile = file.split('\n');
+        var splitFile = backlog.split('\n');
 
         var url;
         for (var i = splitFile.length - 1; i >= 0; i--) {

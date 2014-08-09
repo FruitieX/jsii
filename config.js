@@ -24,6 +24,22 @@ module.exports = function(filePath) {
         // full name of current channel, sent over irc with some commands
         self.chanFullName = basename.substring(basename.indexOf('_') + 1, basename.length);
 
+        // find and replace these characters in others' messages
+        // you can still send them since you aren't insane :-)
+        self.findAndReplace =
+            [
+                // remove funky ansi characters
+                [ /\x1b[^m]*m/, '' ],
+
+                // 'fix' insane encodings
+                [ /�/g, 'å' ],
+                [ /�/g, 'ä' ],
+                [ /�/g, 'ö' ],
+
+                // tabs -> spaces
+                [/\t/g, '    ']
+            ];
+
         /*
          * Appearance
          */
