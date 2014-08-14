@@ -91,7 +91,7 @@ var printLine = function(line) {
     // align nicks and print
     process.stdout.write(Array(config.maxNickLen - nick.length + 1).join(' '));
     process.stdout.write('\033[38;5;' + clrnick + 'm' + nick + // set nick color + nick
-                         '\033[38;5;' + config.separatorColor + ':' + // set separator color + separator
+                         '\033[38;5;' + config.separatorColor + 'm' + ':' + // set separator color + separator
                          '\033[000m'); // reset colors
     process.stdout.write(' ');
 
