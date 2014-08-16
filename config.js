@@ -37,7 +37,11 @@ module.exports = function(filePath) {
                 [ /�/g, 'ö' ],
 
                 // tabs -> spaces
-                [/\t/g, '    ']
+                [/\t/g, '    '],
+
+                // crlf
+                [/\n/g, ' '],
+                [/\r/g, ' ']
             ];
 
         /*
