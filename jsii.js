@@ -1,26 +1,9 @@
 #!/usr/bin/env node
-var fs = require('fs');
 var spawn = require('child_process').spawn;
 var vimrl = require('vimrl');
-var path = require('path');
+var net = require('net');
 
-// argv[2] must contain path to out / in files
-if(!process.argv[2]) {
-    console.log("ERROR: please provide a valid path!");
-    process.exit(0);
-}
-var config = require('./config')(process.argv[2]);
-
-var out, rli, vim;
-var completions = [];
-
-var outFile = fs.openSync(config.outFileName, 'r+');
-var inFile = fs.openSync(config.inFileName, 'a');
-var outFileStat = fs.statSync(config.outFileName);
-
-var backlog = new Buffer(config.fileBufSize);
-var bytesRead = fs.readSync(outFile, backlog, 0, config.fileBufSize, outFileStat.size - config.fileBufSize);
-backlog = backlog.toString('utf8', 0, bytesRead);
+var config = require(process.env.HOME + "/.jsiiConfig.js");
 
 // reset cursor to lower left corner
 var cursorReset = function() {
@@ -31,8 +14,8 @@ var clearLine = function() {
     process.stdout.write('\033[K');
 };
 
-// prints line from lower left corner
-var printLine = function(line) {
+// prints line to lower left corner of terminal
+var printLine = function(msg) {
     var i;
 
     var hilight = false;
@@ -43,68 +26,56 @@ var printLine = function(line) {
     // clear current line
     clearLine();
 
-    // remove timestamps
-    line = line.replace(/^([^ ]+ ){2}/, '');
-    line = line.split(' ');
-    // remove <> around nick
-    var nick = line[0].substring(1, line[0].length - 1);
-
-    if(completions.indexOf(nick) === -1) {
-        completions.push(nick);
-    }
-
-    // remove nick from line array, now contains space separated text message
-    line.shift();
-    line = line.join(' ');
-
-    var clrnick = 0;
+    var nickColor = 0;
     // support irc ACTION messages
+    /*
     if(line.substring(0, 8) === "\001ACTION ") {
         line = nick + ' ' + line.substring(8);
         nick = '*';
-        clrnick = config.actionColor;
+        nickColor = config.actionColor;
         action = true;
     }
-    else if(nick === config.myNick) {
-        clrnick = config.myNickColor;
+    */
+    if(msg.nick === config.myNick) {
+        nickColor = config.myNickColor;
     } else {
         // nick color, avoids dark colors
-        for(i = 0; i < nick.length; i++) {
-            clrnick += nick.charCodeAt(i);
+        for(i = 0; i < msg.nick.length; i++) {
+            nickColor += msg.nick.charCodeAt(i);
         }
-        clrnick = Math.pow(clrnick, 2) + clrnick * 2;
-        clrnick = clrnick % 255;
-        switch(clrnick) {
+        nickColor = Math.pow(nickColor, 2) + nickColor * 2;
+        nickColor = nickColor % 255;
+        switch(nickColor) {
             case 18: case 22: case 23: case 24:
-                clrnick += 3; break;
+                nickColor += 3; break;
             case 52: case 53: case 54: case 55: case 56: case 57: case 88: case 89:
-                clrnick += 6; break;
+                nickColor += 6; break;
             case 232: case 233: case 234: case 235: case 236: case 237: case 238: case 239:
-                clrnick += 8; break;
+                nickColor += 8; break;
             case 0: case 8: case 19: case 22:
-                clrnick++; break;
+                nickColor++; break;
         }
     }
 
     // limit nicklen
-    nick = nick.substr(0, config.maxNickLen);
+    msg.nick = msg.nick.substr(0, config.maxNickLen);
     // align nicks and print
-    process.stdout.write(Array(config.maxNickLen - nick.length + 1).join(' '));
-    process.stdout.write('\033[38;5;' + clrnick + 'm' + nick + // set nick color + nick
+    process.stdout.write(Array(config.maxNickLen - msg.nick.length + 1).join(' '));
+    process.stdout.write('\033[38;5;' + nickColor + 'm' + msg.nick + // set nick color + nick
                          '\033[38;5;' + config.separatorColor + 'm' + ':' + // set separator color + separator
                          '\033[000m'); // reset colors
     process.stdout.write(' ');
 
     for (i = 0; i < config.findAndReplace.length; i++) {
-        line = line.replace(config.findAndReplace[i][0],
-                            config.findAndReplace[i][1]);
+        msg = msg.replace(config.findAndReplace[i][0],
+                          config.findAndReplace[i][1]);
     }
 
-    if(line.match(config.hilight_re))
+    if(msg.match(config.hilight_re))
         hilight = true;
 
     var textColor = 15;
-    if (nick === config.myNick)
+    if (msg.nick === config.myNick)
         textColor = config.myNickColor;
     else if (action)
         textColor = config.actionColor;
@@ -121,13 +92,13 @@ var printLine = function(line) {
     if(availWidth <= 5)
         return;
 
-    while(i * availWidth - wrappedChars < line.length) {
+    while(i * availWidth - wrappedChars < msg.length) {
         var start = i * availWidth - wrappedChars;
-        var curLine = line.substr(start, availWidth);
+        var curLine = msg.substr(start, availWidth);
         // remove leading space on next line
         curLine.replace(/^\s+/, '');
         // line wrap at word boundary only if there is whitespace on this line
-        if(start + availWidth < line.length && curLine.lastIndexOf(' ') !== -1) {
+        if(start + availWidth < msg.length && curLine.lastIndexOf(' ') !== -1) {
             curLine = curLine.slice(0, curLine.lastIndexOf(' '));
             // remove whitespace
             wrappedChars--;
@@ -148,25 +119,10 @@ var printLine = function(line) {
 // redraw screen
 var redraw = function() {
     process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
-
-    var start = 0;
-    while (start < backlog.length) {
-        var end = backlog.indexOf('\n', start);
-        if(end === -1)
-            break;
-
-        printLine(backlog.substring(start, end));
-        start = end + 1;
-    }
-
-    readline.redraw();
+    socket.write({
+        cmd: 'backlog'
+    });
 };
-
-// limit file to size fileBufSize
-if(backlog.length >= config.fileBufSize) {
-    backlog = backlog.substr(backlog.length - config.fileBufSize, backlog.length);
-    backlog = backlog.substr(backlog.indexOf("\n") + 1, backlog.length);
-}
 
 process.stdin.setRawMode(true);
 
@@ -214,17 +170,9 @@ return [hits, word]
 */
 
 // watch file for changes
-Tail = require('tail').Tail;
-out = new Tail(config.outFileName);
-out.on('line', function(data) {
-    backlog += data + '\n';
-    // limit file to size fileBufSize
-    if(backlog.length >= config.fileBufSize) {
-        backlog = backlog.substr(backlog.length - config.fileBufSize, backlog.length);
-        backlog = backlog.substr(backlog.indexOf("\n") + 1, backlog.length);
-    }
-
-    printLine(data);
+var socket = net.connect({port: config.port, host: config.addr});
+socket.on('data', function(msg) {
+    printLine(msg);
     readline.redraw();
 });
 
@@ -269,7 +217,10 @@ readline = vimrl({
                 var res = config.url_re.exec(words[j]);
                 if(res) {
                     url = res[0];
-                    printLine("xxxx-xx-xx xx:xx <***> URL " + current +  ": " + url);
+                    printLine({
+                        nick: '***',
+                        msg: 'URL ' + current + ': ' + url
+                    });
                     readline.redraw();
                     current++;
                 }
@@ -315,10 +266,16 @@ readline = vimrl({
                 stdio: [ 'ignore', 'ignore' , 'ignore' ]
             });
             child.unref();
-            printLine("xxxx-xx-xx xx:xx <***> URL " + (parseInt(line.substring(3)) | 0) +  " opened: " + url);
+            printLine({
+                nick: '***',
+                msg: 'URL ' + (parseInt(line.substring(3)) | 0) +  " opened: " + url
+            });
             readline.redraw();
         } else {
-            printLine("xxxx-xx-xx xx:xx <***> No URL found");
+            printLine({
+                nick: '***',
+                msg: 'No URL found'
+            });
             readline.redraw();
         }
 
