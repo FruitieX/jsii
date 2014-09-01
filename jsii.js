@@ -143,14 +143,19 @@ process.stdin.on('readable', function() {
         var keyHex = input.toString('hex');
 
         // previous channel (alt + h)
-        if(keyHex === '1b68') process.exit(10);
+        if(keyHex === '1b68') {
+            console.log("TODO");
+        }
         // next channel (alt + l)
-        else if(keyHex === '1b6c') process.exit(11);
+        else if(keyHex === '1b6c') {
+            console.log("TODO");
+        }
         // jump to this channel (alt + 1-9)
-        else if(keyHex.substring(0, 3) === '1b3' &&
-            keyHex.substring(3) !== '0') process.exit(keyHex.substring(3));
-        else
+        else if(keyHex.substring(0, 3) === '1b3' && keyHex.substring(3) !== '0') {
+            console.log("TODO");
+        } else {
             readline.handleInput(input);
+        }
 
         // DEBUG: uncomment this line to find the keycodes
         //console.log(key.toString('hex'));
