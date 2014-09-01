@@ -9,8 +9,6 @@ var nicks = {};
 
 var chanNumber, server, chan;
 
-// find server & channels names from first argument
-
 var findChannel = function(searchString) {
     // exact match for server:chan format
     if(searchString.indexOf(':') !== -1) {
@@ -44,6 +42,7 @@ var findChannel = function(searchString) {
     }
 };
 
+/* find server & channels names from first argument */
 // no args: pick first favorite chan
 if(!process.argv[2]) {
     server = config.favoriteChannels[0].server;
@@ -60,11 +59,12 @@ if(!process.argv[2]) {
 
     server = results.server;
     chan = results.chan;
+    chanNumber = results.chanNumber;
 }
 
 // for prompt
 var getChanName = function(server, chan, chanNumber) {
-    if(chanNumber === 0 || chanNumber) {
+    if(!isNaN(chanNumber)) {
         return config.favoriteChannels[chanNumber].shortName;
     } else {
         return server + ':' + chan;
@@ -207,11 +207,29 @@ process.stdin.on('readable', function() {
 
         // previous channel (alt + h)
         if(keyHex === '1b68') {
-            console.log("TODO");
+            chanNumber--;
+            if(chanNumber < 0)
+                chanNumber = config.favoriteChannels.length - 1;
+
+            server = config.favoriteChannels[chanNumber].server;
+            chan = config.favoriteChannels[chanNumber].chan;
+
+            readline.changePrompt(config.getPrompt(
+                        getChanName(server, chan, chanNumber), chanNumber));
+            redraw();
         }
         // next channel (alt + l)
         else if(keyHex === '1b6c') {
-            console.log("TODO");
+            chanNumber++;
+            if(chanNumber >= config.favoriteChannels.length)
+                chanNumber = 0;
+
+            server = config.favoriteChannels[chanNumber].server;
+            chan = config.favoriteChannels[chanNumber].chan;
+
+            readline.changePrompt(config.getPrompt(
+                        getChanName(server, chan, chanNumber), chanNumber));
+            redraw();
         }
         // jump to this channel (alt + 1-9)
         else if(keyHex.substring(0, 3) === '1b3' && keyHex.substring(3) !== '0') {
@@ -268,7 +286,6 @@ socket.on('data', function(data) {
 
 // handle terminal resize
 process.stdout.on('resize', function() {
-    process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
     redraw();
 });
 
@@ -383,6 +400,4 @@ readline = vimrl(prompt, function(line) {
 
 readline.gotoInsertMode();
 
-// clear terminal and print file contents at launch
-process.stdout.write('\u001B[2J\u001B[0;0f');
 redraw();
