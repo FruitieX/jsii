@@ -102,8 +102,8 @@ var printLine = function(msg) {
 
     // support irc ACTION messages
     if(msg.cmd === 'action') {
-        line = nick + ' ' + line.substring(8);
-        nick = '*';
+        msg.message = msg.nick + ' ' + msg.message.substring(8);
+        msg.nick = '*';
         nickColor = config.actionColor;
         textColor = config.actionColor;
     } else if (msg.cmd === 'join') {
@@ -112,6 +112,9 @@ var printLine = function(msg) {
     } else if (msg.cmd === 'part') {
         msg.message = config.partMsg;
         textColor = config.partColor;
+    } else if (msg.cmd === 'nicklist') {
+        msg.nick = '*';
+        msg.message = 'Names: ' + msg.nicks.join(', ');
     } else if(msg.message.match(config.hilight_re)) {
         textColor = config.hilightColor;
     }
@@ -143,7 +146,7 @@ var printLine = function(msg) {
     // limit nicklen
     msg.nick = msg.nick.substr(0, config.maxNickLen);
     // align nicks and print
-    process.stdout.write(Array(config.maxNickLen - msg.nick.length + config.nickSeparator.length).join(' '));
+    process.stdout.write(Array(config.maxNickLen - msg.nick.length + 1).join(' '));
     process.stdout.write('\033[38;5;' + nickColor + 'm' + msg.nick + // set nick color + nick
                          '\033[38;5;' + config.separatorColor + 'm' + config.nickSeparator + // set separator color + separator
                          '\033[000m'); // reset colors
@@ -290,9 +293,22 @@ socket.on('data', function(data) {
 
         for(var i = 0; i < recvdLines.length; i++) {
             var msg = JSON.parse(recvdLines[i]);
+
+            // is the message on the active channel?
             if(msg.server + ':' + msg.chan === server + ':' + chan) {
                 printLine(msg);
                 readline.redraw();
+
+                if(msg.cmd === 'join') {
+                    nicks[msg.nick] = true;
+                } else if(msg.cmd === 'part') {
+                    delete(nicks[msg.nick]);
+                } else if(msg.cmd === 'nicklist') {
+                    nicks = {};
+                    for(var j = 0; j < msg.nicks.length; j++) {
+                        nicks[msg.nicks[i]] = true;
+                    }
+                }
             }
         }
     }
@@ -312,7 +328,11 @@ readline = vimrl(prompt, function(line) {
     } else if(line.substring(0, 4) === '/me ') { // irc ACTION message
         line = "\001ACTION " + line.substring(4);
     } else if(line === '/names') { // request nick list
-        line = "/names " + chan;
+        printLine({
+            cmd: 'nicklist',
+            nicks: Object.keys(nicks)
+        });
+        return;
     } else if (line === '/ul') { // list urls in buffer
         var current = 0;
         var splitFile = backlog.split('\n');
