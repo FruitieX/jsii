@@ -57,9 +57,14 @@ if(!process.argv[2]) {
 } else {
     var results = findChannel(process.argv[2]);
 
-    server = results.server;
-    chan = results.chan;
-    chanNumber = results.chanNumber;
+    if(results) {
+        server = results.server;
+        chan = results.chan;
+        chanNumber = results.chanNumber;
+    } else {
+        console.log("No results with given search terms!");
+        process.exit(1);
+    }
 }
 
 // for prompt
