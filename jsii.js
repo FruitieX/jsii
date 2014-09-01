@@ -110,7 +110,7 @@ var printLine = function(msg) {
         separator = '';
         msg.message = config.joinMsg;
         textColor = config.joinColor;
-    } else if (msg.cmd === 'part') {
+    } else if (msg.cmd === 'part' || msg.cmd === 'quit') {
         separator = '';
         msg.message = config.partMsg;
         textColor = config.partColor;
@@ -299,6 +299,15 @@ socket.on('data', function(data) {
         for(var i = 0; i < recvdLines.length; i++) {
             var msg = JSON.parse(recvdLines[i]);
 
+            if(msg.cmd === 'quit') {
+                if(nicks[msg.nick]) {
+                    printLine(msg);
+                    readline.redraw();
+
+                    delete(nicks[msg.nick]);
+                }
+            }
+
             // is the message on the active channel?
             if(msg.server + ':' + msg.chan === server + ':' + chan) {
                 // store nicklist
@@ -435,8 +444,11 @@ readline = vimrl(prompt, function(line) {
     };
     sendMsg(msg);
 
-    msg.nick = config.myNick;
-    printLine(msg);
+    // print non command messages
+    if(msg.message[0] !== '/') {
+        msg.nick = config.myNick;
+        printLine(msg);
+    }
 });
 
 readline.gotoInsertMode();
