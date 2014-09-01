@@ -90,6 +90,7 @@ var printLine = function(msg) {
 
     var hilight = false;
     var action = false;
+    var separator = config.nickSeparator;
 
     // move cursor to lower left
     cursorReset();
@@ -97,61 +98,62 @@ var printLine = function(msg) {
     clearLine();
 
     var nickColor = 0;
+    var textColor = 15;
+
     // support irc ACTION messages
     if(msg.cmd === 'action') {
         line = nick + ' ' + line.substring(8);
         nick = '*';
         nickColor = config.actionColor;
-        action = true;
+        textColor = config.actionColor;
+    } else if (msg.cmd === 'join') {
+        msg.message = config.joinMsg;
+        textColor = config.joinColor;
+    } else if (msg.cmd === 'part') {
+        msg.message = config.partMsg;
+        textColor = config.partColor;
+    } else if(msg.message.match(config.hilight_re)) {
+        textColor = config.hilightColor;
     }
-    if(msg.nick === config.myNick) {
-        nickColor = config.myNickColor;
-    } else if (msg.cmd === 'message') {
-        // nick color, avoids dark colors
-        for(i = 0; i < msg.nick.length; i++) {
-            nickColor += msg.nick.charCodeAt(i);
-        }
-        nickColor = Math.pow(nickColor, 2) + nickColor * 2;
-        nickColor = nickColor % 255;
-        switch(nickColor) {
-            case 18: case 22: case 23: case 24:
-                nickColor += 3; break;
-            case 52: case 53: case 54: case 55: case 56: case 57: case 88: case 89:
-                nickColor += 6; break;
-            case 232: case 233: case 234: case 235: case 236: case 237: case 238: case 239:
-                nickColor += 8; break;
-            case 0: case 8: case 19: case 22:
-                nickColor++; break;
+
+    if (msg.nick) {
+        if(msg.nick === config.myNick) {
+            nickColor = config.myNickColor;
+            textColor = config.myNickColor;
+        } else {
+            // nick color, avoids dark colors
+            for(i = 0; i < msg.nick.length; i++) {
+                nickColor += msg.nick.charCodeAt(i);
+            }
+            nickColor = Math.pow(nickColor, 2) + nickColor * 2;
+            nickColor = nickColor % 255;
+            switch(nickColor) {
+                case 18: case 22: case 23: case 24:
+                    nickColor += 3; break;
+                case 52: case 53: case 54: case 55: case 56: case 57: case 88: case 89:
+                    nickColor += 6; break;
+                case 232: case 233: case 234: case 235: case 236: case 237: case 238: case 239:
+                    nickColor += 8; break;
+                case 0: case 8: case 19: case 22:
+                    nickColor++; break;
+            }
         }
     }
 
     // limit nicklen
     msg.nick = msg.nick.substr(0, config.maxNickLen);
     // align nicks and print
-    process.stdout.write(Array(config.maxNickLen - msg.nick.length + 1).join(' '));
+    process.stdout.write(Array(config.maxNickLen - msg.nick.length + config.nickSeparator.length).join(' '));
     process.stdout.write('\033[38;5;' + nickColor + 'm' + msg.nick + // set nick color + nick
-                         '\033[38;5;' + config.separatorColor + 'm' + ':' + // set separator color + separator
+                         '\033[38;5;' + config.separatorColor + 'm' + config.nickSeparator + // set separator color + separator
                          '\033[000m'); // reset colors
-    process.stdout.write(' ');
 
     for (i = 0; i < config.findAndReplace.length; i++) {
         msg.message = msg.message.replace(config.findAndReplace[i][0],
                                           config.findAndReplace[i][1]);
     }
 
-    if(msg.message.match(config.hilight_re))
-        hilight = true;
-
-    var textColor = 15;
-    if (msg.nick === config.myNick)
-        textColor = config.myNickColor;
-    else if (action)
-        textColor = config.actionColor;
-    else if (hilight)
-        textColor = config.hilightColor;
-
-    // separator takes up 1 char + whitespace
-    var availWidth = process.stdout.columns - config.maxNickLen - 2;
+    var availWidth = process.stdout.columns - config.maxNickLen - config.nickSeparator.length;
 
     var wrappedChars = 0;
     i = 0;
@@ -192,6 +194,7 @@ var redraw = function() {
         chan: chan,
         server: server
     });
+    readline.redraw();
 };
 
 process.stdin.setRawMode(true);
@@ -233,7 +236,14 @@ process.stdin.on('readable', function() {
         }
         // jump to this channel (alt + 1-9)
         else if(keyHex.substring(0, 3) === '1b3' && keyHex.substring(3) !== '0') {
-            console.log("TODO");
+            chanNumber = parseInt(keyHex.substring(3));
+
+            server = config.favoriteChannels[chanNumber].server;
+            chan = config.favoriteChannels[chanNumber].chan;
+
+            readline.changePrompt(config.getPrompt(
+                        getChanName(server, chan, chanNumber), chanNumber));
+            redraw();
         } else {
             readline.handleInput(input);
         }
