@@ -4,9 +4,72 @@ var vimrl = require('vimrl');
 var net = require('net');
 
 var config = require(process.env.HOME + "/.jsiiConfig.js");
-var chanLongName = process.argv[2];
-var server = process.argv[2].split(':')[0];
-var chan = process.argv[2].split(':')[1];
+
+var nicks = {};
+
+var chanNumber, server, chan;
+
+// find server & channels names from first argument
+
+var findChannel = function(searchString) {
+    // exact match for server:chan format
+    if(searchString.indexOf(':') !== -1) {
+        // first try looking for a match in config
+        for(var i = 0; i < config.favoriteChannels.length; i++) {
+            if(searchString === (config.favoriteChannels[i].server + ':' +
+                                config.favoriteChannels[i].chan)) {
+                return {
+                    chanNumber: i,
+                    server: config.favoriteChannels[i].server,
+                    chan: config.favoriteChannels[i].chan
+                }
+            }
+        }
+        // otherwise assume the user knows better, use provided names
+        return {
+            server: searchString.split(':')[0],
+            chan: searchString.split(':')[1]
+        }
+    }
+
+    // search for substring in shortName
+    for(var i = 0; i < config.favoriteChannels.length; i++) {
+        if(config.favoriteChannels[i].shortName.match(new RegExp(searchString))) {
+            return {
+                chanNumber: i,
+                server: config.favoriteChannels[i].server,
+                chan: config.favoriteChannels[i].chan
+            }
+        }
+    }
+};
+
+// no args: pick first favorite chan
+if(!process.argv[2]) {
+    server = config.favoriteChannels[0].server;
+    chan = config.favoriteChannels[0].chan;
+    chanNumber = 0;
+// by channel number
+} else if (!isNaN(process.argv[2])) {
+    chanNumber = parseInt(process.argv[2]);
+    server = config.favoriteChannels[chanNumber].server;
+    chan = config.favoriteChannels[chanNumber].chan;
+// else search
+} else {
+    var results = findChannel(process.argv[2]);
+
+    server = results.server;
+    chan = results.chan;
+}
+
+// for prompt
+var getChanName = function(server, chan, chanNumber) {
+    if(chanNumber === 0 || chanNumber) {
+        return config.favoriteChannels[chanNumber].shortName;
+    } else {
+        return server + ':' + chan;
+    }
+};
 
 var sendMsg = function(msg) {
     socket.write(JSON.stringify(msg) + '\n');
@@ -209,7 +272,7 @@ process.stdout.on('resize', function() {
     redraw();
 });
 
-var prompt = config.getPrompt(chanLongName);
+var prompt = config.getPrompt(getChanName(server, chan, chanNumber), chanNumber);
 
 // parse some select commands from input line
 readline = vimrl(prompt, function(line) {
