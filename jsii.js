@@ -4,6 +4,13 @@ var vimrl = require('vimrl');
 var net = require('net');
 
 var config = require(process.env.HOME + "/.jsiiConfig.js");
+var chanLongName = process.argv[2];
+var server = process.argv[2].split(':')[0];
+var chan = process.argv[2].split(':')[1];
+
+var sendMsg = function(msg) {
+    socket.write(JSON.stringify(msg) + '\n');
+};
 
 // reset cursor to lower left corner
 var cursorReset = function() {
@@ -28,17 +35,15 @@ var printLine = function(msg) {
 
     var nickColor = 0;
     // support irc ACTION messages
-    /*
-    if(line.substring(0, 8) === "\001ACTION ") {
+    if(msg.cmd === 'action') {
         line = nick + ' ' + line.substring(8);
         nick = '*';
         nickColor = config.actionColor;
         action = true;
     }
-    */
     if(msg.nick === config.myNick) {
         nickColor = config.myNickColor;
-    } else {
+    } else if (msg.cmd === 'message') {
         // nick color, avoids dark colors
         for(i = 0; i < msg.nick.length; i++) {
             nickColor += msg.nick.charCodeAt(i);
@@ -67,11 +72,11 @@ var printLine = function(msg) {
     process.stdout.write(' ');
 
     for (i = 0; i < config.findAndReplace.length; i++) {
-        msg = msg.replace(config.findAndReplace[i][0],
-                          config.findAndReplace[i][1]);
+        msg.message = msg.message.replace(config.findAndReplace[i][0],
+                                          config.findAndReplace[i][1]);
     }
 
-    if(msg.match(config.hilight_re))
+    if(msg.message.match(config.hilight_re))
         hilight = true;
 
     var textColor = 15;
@@ -92,13 +97,13 @@ var printLine = function(msg) {
     if(availWidth <= 5)
         return;
 
-    while(i * availWidth - wrappedChars < msg.length) {
+    while(i * availWidth - wrappedChars < msg.message.length) {
         var start = i * availWidth - wrappedChars;
-        var curLine = msg.substr(start, availWidth);
+        var curLine = msg.message.substr(start, availWidth);
         // remove leading space on next line
         curLine.replace(/^\s+/, '');
         // line wrap at word boundary only if there is whitespace on this line
-        if(start + availWidth < msg.length && curLine.lastIndexOf(' ') !== -1) {
+        if(start + availWidth < msg.message.length && curLine.lastIndexOf(' ') !== -1) {
             curLine = curLine.slice(0, curLine.lastIndexOf(' '));
             // remove whitespace
             wrappedChars--;
@@ -119,8 +124,9 @@ var printLine = function(msg) {
 // redraw screen
 var redraw = function() {
     process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
-    socket.write({
-        cmd: 'backlog'
+    sendMsg({
+        cmd: 'backlog',
+        chan: chanLongName
     });
 };
 
@@ -171,9 +177,24 @@ return [hits, word]
 
 // watch file for changes
 var socket = net.connect({port: config.port, host: config.addr});
-socket.on('data', function(msg) {
-    printLine(msg);
-    readline.redraw();
+var buffer = "";
+
+socket.on('data', function(data) {
+    buffer += data.toString('utf8');
+
+    var lastNL = buffer.lastIndexOf('\n');
+    if(lastNL !== -1) {
+        var recvdLines = buffer.substr(0, lastNL).split('\n');
+        buffer = buffer.substr(lastNL + 1);
+
+        for(var i = 0; i < recvdLines.length; i++) {
+            var msg = JSON.parse(recvdLines[i]);
+            if(msg.server + ':' + msg.chan === server + ':' + chan) {
+                printLine(msg);
+                readline.redraw();
+            }
+        }
+    }
 });
 
 // handle terminal resize
@@ -182,21 +203,18 @@ process.stdout.on('resize', function() {
     redraw();
 });
 
+var prompt = config.getPrompt(chanLongName);
+
 // parse some select commands from input line
-readline = vimrl({
-    normalPrompt: config.normalPrompt,
-    normalPromptColors: config.normalPromptColors,
-    insertPrompt: config.insertPrompt,
-    insertPromptColors: config.insertPromptColors
-}, function(line) {
+readline = vimrl(prompt, function(line) {
     redraw();
 
     if(line === '/bl' || line.substring(0, 4) === '/bl ') { // request backlog
-        line = "/privmsg *backlog " + config.chanFullName + ' ' + line.substring(4);
+        line = "/privmsg *backlog " + chan + ' ' + line.substring(4);
     } else if(line.substring(0, 4) === '/me ') { // irc ACTION message
         line = "\001ACTION " + line.substring(4);
     } else if(line === '/names') { // request nick list
-        line = "/names " + config.chanFullName;
+        line = "/names " + chan;
     } else if (line === '/ul') { // list urls in buffer
         var current = 0;
         var splitFile = backlog.split('\n');
@@ -283,8 +301,14 @@ readline = vimrl({
     }
 
     // send input line to ii
-    var msg = new Buffer(line + '\n', 'utf8');
-    fs.writeSync(inFile, msg, 0, msg.length, null);
+    var msgString = line;
+    var msg = {
+        cmd: 'message',
+        chan: chan,
+        server: server,
+        message: msgString
+    };
+    socket.write(msg);
 });
 
 readline.gotoInsertMode();
