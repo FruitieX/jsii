@@ -221,6 +221,7 @@ process.stdin.on('readable', function() {
 
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
+            nicks = {};
 
             readline.changePrompt(config.getPrompt(
                         getChanName(server, chan, chanNumber), chanNumber));
@@ -236,6 +237,7 @@ process.stdin.on('readable', function() {
 
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
+            nicks = {};
 
             readline.changePrompt(config.getPrompt(
                         getChanName(server, chan, chanNumber), chanNumber));
@@ -247,6 +249,7 @@ process.stdin.on('readable', function() {
 
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
+            nicks = {};
 
             readline.changePrompt(config.getPrompt(
                         getChanName(server, chan, chanNumber), chanNumber));
@@ -298,9 +301,8 @@ socket.on('data', function(data) {
             if(msg.server + ':' + msg.chan === server + ':' + chan) {
                 // store nicklist
                 if(msg.cmd === 'nicklist') {
-                    nicks = {};
                     for(var j = 0; j < msg.nicks.length; j++) {
-                        nicks[msg.nicks[i]] = true;
+                        nicks[msg.nicks[j]] = true;
                     }
                 } else {
                     printLine(msg);
