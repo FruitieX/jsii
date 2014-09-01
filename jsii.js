@@ -210,7 +210,9 @@ process.stdin.on('readable', function() {
 
         // previous channel (alt + h)
         if(keyHex === '1b68') {
-            chanNumber--;
+            if(isNaN(chanNumber)) chanNumber = 0;
+            else chanNumber--;
+
             if(chanNumber < 0)
                 chanNumber = config.favoriteChannels.length - 1;
 
@@ -223,7 +225,9 @@ process.stdin.on('readable', function() {
         }
         // next channel (alt + l)
         else if(keyHex === '1b6c') {
-            chanNumber++;
+            if(isNaN(chanNumber)) chanNumber = 0;
+            else chanNumber++;
+
             if(chanNumber >= config.favoriteChannels.length)
                 chanNumber = 0;
 
