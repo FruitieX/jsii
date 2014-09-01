@@ -126,7 +126,8 @@ var redraw = function() {
     process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
     sendMsg({
         cmd: 'backlog',
-        chan: chanLongName
+        chan: chan,
+        server: server
     });
 };
 
