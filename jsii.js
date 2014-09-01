@@ -107,9 +107,11 @@ var printLine = function(msg) {
         nickColor = config.actionColor;
         textColor = config.actionColor;
     } else if (msg.cmd === 'join') {
+        separator = '';
         msg.message = config.joinMsg;
         textColor = config.joinColor;
     } else if (msg.cmd === 'part') {
+        separator = '';
         msg.message = config.partMsg;
         textColor = config.partColor;
     } else if (msg.cmd === 'nicklist') {
@@ -148,7 +150,7 @@ var printLine = function(msg) {
     // align nicks and print
     process.stdout.write(Array(config.maxNickLen - msg.nick.length + 1).join(' '));
     process.stdout.write('\033[38;5;' + nickColor + 'm' + msg.nick + // set nick color + nick
-                         '\033[38;5;' + config.separatorColor + 'm' + config.nickSeparator + // set separator color + separator
+                         '\033[38;5;' + config.separatorColor + 'm' + separator + // set separator color + separator
                          '\033[000m'); // reset colors
 
     for (i = 0; i < config.findAndReplace.length; i++) {
@@ -156,7 +158,7 @@ var printLine = function(msg) {
                                           config.findAndReplace[i][1]);
     }
 
-    var availWidth = process.stdout.columns - config.maxNickLen - config.nickSeparator.length;
+    var availWidth = process.stdout.columns - config.maxNickLen - separator.length;
 
     var wrappedChars = 0;
     i = 0;
