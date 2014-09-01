@@ -296,17 +296,20 @@ socket.on('data', function(data) {
 
             // is the message on the active channel?
             if(msg.server + ':' + msg.chan === server + ':' + chan) {
-                printLine(msg);
-                readline.redraw();
-
-                if(msg.cmd === 'join') {
-                    nicks[msg.nick] = true;
-                } else if(msg.cmd === 'part') {
-                    delete(nicks[msg.nick]);
-                } else if(msg.cmd === 'nicklist') {
+                // store nicklist
+                if(msg.cmd === 'nicklist') {
                     nicks = {};
                     for(var j = 0; j < msg.nicks.length; j++) {
                         nicks[msg.nicks[i]] = true;
+                    }
+                } else {
+                    printLine(msg);
+                    readline.redraw();
+
+                    if(msg.cmd === 'join') {
+                        nicks[msg.nick] = true;
+                    } else if(msg.cmd === 'part') {
+                        delete(nicks[msg.nick]);
                     }
                 }
             }
