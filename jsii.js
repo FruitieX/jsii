@@ -208,8 +208,6 @@ var prompt = config.getPrompt(chanLongName);
 
 // parse some select commands from input line
 readline = vimrl(prompt, function(line) {
-    redraw();
-
     if(line === '/bl' || line.substring(0, 4) === '/bl ') { // request backlog
         line = "/privmsg *backlog " + chan + ' ' + line.substring(4);
     } else if(line.substring(0, 4) === '/me ') { // irc ACTION message
@@ -301,15 +299,18 @@ readline = vimrl(prompt, function(line) {
         return;
     }
 
-    // send input line to ii
-    var msgString = line;
+    // send input line to jsiid
     var msg = {
         cmd: 'message',
         chan: chan,
         server: server,
-        message: msgString
+        message: line,
+        nick: config.myNick
     };
-    socket.write(msg);
+    sendMsg(msg);
+
+    msg.nick = config.myNick;
+    printLine(msg);
 });
 
 readline.gotoInsertMode();
