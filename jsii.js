@@ -402,9 +402,15 @@ readline = vimrl(prompt, function(line) {
 
         return;
     } else if (line === '/u' || line.substring(0, 3) === '/u ') { // open url
-        var skip = parseInt(line.substring(3)) | 0;
-        var splitFile = backlog.split('\n');
+        sendMsg({
+            cmd: "search",
+            skip: (parseInt(line.substring(3)) | 0),
+            chan: chan,
+            server: server,
+            searchRE: config.urlRE_s
+        });
 
+        /*
         var url;
         for (var i = splitFile.length - 1; i >= 0; i--) {
             // TODO: put this mess into a function
@@ -453,6 +459,7 @@ readline = vimrl(prompt, function(line) {
         }
 
         return;
+        */
     }
 
     // send input line to jsiid
