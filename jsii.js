@@ -9,6 +9,17 @@ var nicks = {};
 
 var chanNumber, server, chan;
 
+var updateCompletions = function() {
+    var nicksArray = Object.keys(nicks);
+    for(var i = 0; i < nicksArray.length; i++) {
+        if(nicksArray[i][0] === '@' || nicksArray[i][0] === '+') {
+            nicksArray[i] = nicksArray[i].substr(1);
+        }
+    }
+
+    readline.setCompletions(nicksArray);
+};
+
 var findChannel = function(searchString) {
     // exact match for server:chan format
     if(searchString.indexOf(':') !== -1) {
@@ -310,6 +321,7 @@ socket.on('data', function(data) {
                     readline.redraw();
 
                     delete(nicks[msg.nick]);
+                    updateCompletions();
                 }
             }
 
@@ -320,14 +332,17 @@ socket.on('data', function(data) {
                     for(var j = 0; j < msg.nicks.length; j++) {
                         nicks[msg.nicks[j]] = true;
                     }
+                    updateCompletions();
                 } else {
                     printLine(msg);
                     readline.redraw();
 
                     if(msg.cmd === 'join') {
                         nicks[msg.nick] = true;
+                        updateCompletions();
                     } else if(msg.cmd === 'part') {
                         delete(nicks[msg.nick]);
+                        updateCompletions();
                     }
                 }
             }
