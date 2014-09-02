@@ -15,6 +15,7 @@ var updateCompletions = function() {
         if(nicksArray[i][0] === '@' || nicksArray[i][0] === '+') {
             nicksArray[i] = nicksArray[i].substr(1);
         }
+        nicksArray[i] += ', ';
     }
 
     readline.setCompletions(nicksArray);
