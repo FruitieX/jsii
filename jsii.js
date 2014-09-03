@@ -127,7 +127,7 @@ var printLine = function(msg) {
         separator = '';
         msg.message = config.joinMsg;
         textColor = config.joinColor;
-    } else if (msg.cmd === 'part' || msg.cmd === 'quit') {
+    } else if (msg.cmd === 'part') {
         separator = '';
         msg.message = config.partMsg;
         textColor = config.partColor;
@@ -316,19 +316,14 @@ socket.on('data', function(data) {
         for(var i = 0; i < recvdLines.length; i++) {
             var msg = JSON.parse(recvdLines[i]);
 
-            if(msg.cmd === 'quit') {
-                // TODO: store in backlog
-                if(nicks[msg.nick]) {
-                    printLine(msg);
-                    readline.redraw();
+            var msgChanLongName = msg.server + ':' + msg.chan;
+            msgChanLongName = msgChanLongName.toLowerCase();
 
-                    delete(nicks[msg.nick]);
-                    updateCompletions();
-                }
-            }
+            var chanLongName = server + ':' + chan;
+            chanLongName = chanLongName.toLowerCase();
 
             // is the message on the active channel?
-            if(msg.broadcast || msg.server + ':' + msg.chan === server + ':' + chan) {
+            if(msg.broadcast || chanLongName === msgChanLongName) {
                 // store nicklist
                 if(msg.cmd === 'nicklist') {
                     for(var j = 0; j < msg.nicks.length; j++) {
