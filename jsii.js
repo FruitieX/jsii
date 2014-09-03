@@ -328,7 +328,7 @@ socket.on('data', function(data) {
             }
 
             // is the message on the active channel?
-            if(msg.server + ':' + msg.chan === server + ':' + chan) {
+            if(msg.broadcast || msg.server + ':' + msg.chan === server + ':' + chan) {
                 // store nicklist
                 if(msg.cmd === 'nicklist') {
                     for(var j = 0; j < msg.nicks.length; j++) {
