@@ -409,6 +409,7 @@ readline = vimrl(prompt, function(line) {
             server: server,
             searchRE: config.urlRE_s
         });
+        return;
 
         /*
         var url;
