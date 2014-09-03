@@ -345,7 +345,7 @@ socket.on('data', function(data) {
                         child.unref();
                         printLine({
                             nick: '***',
-                            message: 'URL ' + msg.id + " opened:" + msg.message
+                            message: 'URL opened:' + msg.message
                         });
                         readline.redraw();
                     }
