@@ -336,8 +336,10 @@ socket.on('data', function(data) {
                     updateCompletions();
                 } else if (msg.cmd === 'searchResults') {
                     if(msg.type === 'urllist') {
-                        msg.message = 'URL ' + msg.id + ':' + msg.message;
-                        printLine(msg);
+                        printLine({
+                            nick: '***',
+                            message: 'URL ' + msg.id + ':' + msg.message
+                        });
                         readline.redraw();
                     } else if(msg.type === 'openurl') {
                         var child = spawn('chromium', [msg.message], {
@@ -347,7 +349,7 @@ socket.on('data', function(data) {
                         child.unref();
                         printLine({
                             nick: '***',
-                            message: 'URL ' + msg.id + " opened: " + msg.message
+                            message: 'URL ' + msg.id + " opened:" + msg.message
                         });
                         readline.redraw();
                     }
