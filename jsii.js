@@ -317,6 +317,7 @@ socket.on('data', function(data) {
             var msg = JSON.parse(recvdLines[i]);
 
             if(msg.cmd === 'quit') {
+                // TODO: store in backlog
                 if(nicks[msg.nick]) {
                     printLine(msg);
                     readline.redraw();
