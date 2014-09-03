@@ -1,9 +1,8 @@
 jsii
 ====
 
-node.js based user interface for the `ii` irc client with vim-like keybindings.
-Takes as first argument a directory where it reads/writes out/in files. Bundled
-with a handful of scripts to make using `ii` a blast!
+node.js based user interface for the `jsiid` irc client with vim-like keybindings.
+Takes as first argument a server:chan name, channel id or search string.
 
 ![Screenshot](/screenshot.png "Yep, it's an irc client.")
 
