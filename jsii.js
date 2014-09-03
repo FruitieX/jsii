@@ -334,6 +334,23 @@ socket.on('data', function(data) {
                         nicks[msg.nicks[j]] = true;
                     }
                     updateCompletions();
+                } else if (msg.cmd === 'searchResults') {
+                    if(msg.type === 'urllist') {
+                        msg.message = 'URL ' + msg.id + ':' + msg.message;
+                        printLine(msg);
+                        readline.redraw();
+                    } else if(msg.type === 'openurl') {
+                        var child = spawn('chromium', [msg.message], {
+                            detached: true,
+                            stdio: [ 'ignore', 'ignore' , 'ignore' ]
+                        });
+                        child.unref();
+                        printLine({
+                            nick: '***',
+                            message: 'URL ' + msg.id + " opened: " + msg.message
+                        });
+                        readline.redraw();
+                    }
                 } else {
                     printLine(msg);
                     readline.redraw();
@@ -371,6 +388,19 @@ readline = vimrl(prompt, function(line) {
         });
         return;
     } else if (line === '/ul') { // list urls in buffer
+        sendMsg({
+            cmd: "search",
+            type: "urllist",
+            skip: (parseInt(line.substring(3)) | 0),
+            chan: chan,
+            server: server,
+            searchRE: config.urlRE_s,
+            firstMatchOnly: false,
+            onlyMatching: true
+        });
+
+        return;
+        /*
         var current = 0;
         var splitFile = backlog.split('\n');
 
@@ -401,14 +431,19 @@ readline = vimrl(prompt, function(line) {
         }
 
         return;
+        */
     } else if (line === '/u' || line.substring(0, 3) === '/u ') { // open url
         sendMsg({
             cmd: "search",
+            type: "openurl",
             skip: (parseInt(line.substring(3)) | 0),
             chan: chan,
             server: server,
-            searchRE: config.urlRE_s
+            searchRE: config.urlRE_s,
+            firstMatchOnly: true,
+            onlyMatching: true
         });
+
         return;
 
         /*
@@ -441,16 +476,6 @@ readline = vimrl(prompt, function(line) {
         }
 
         if(url) {
-            var child = spawn('chromium', [url], {
-                detached: true,
-                stdio: [ 'ignore', 'ignore' , 'ignore' ]
-            });
-            child.unref();
-            printLine({
-                nick: '***',
-                msg: 'URL ' + (parseInt(line.substring(3)) | 0) +  " opened: " + url
-            });
-            readline.redraw();
         } else {
             printLine({
                 nick: '***',
