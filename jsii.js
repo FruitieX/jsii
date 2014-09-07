@@ -282,89 +282,96 @@ process.stdin.on('readable', function() {
     }
 });
 
-/*
-// nickname completion from nicknames in file buffer
-// TODO: get nicks from irc server?
-completer: function(line) {
-}
-var word = line.substring(line.lastIndexOf(" ") + 1);
-var hits = completions.filter(function(c) { return c.indexOf(word) == 0 })
-for(var i = hits.length - 1; i >= 0; i--) {
-    if(hits[i] === '!' || hits[i] === '***') { // skip status/info nicknames
-        hits.splice(i, 1);
-    } else if (word === line) { // typing at beginning of line? append colon
-        hits[i] += ': ';
-    } else { // else append comma
-        hits[i] += ', ';
-    }
-}
-return [hits, word]
-*/
+var socket;
+var connect = function() {
+    socket = net.connect({port: config.port, host: config.addr});
 
-// watch file for changes
-var socket = net.connect({port: config.port, host: config.addr});
-var buffer = "";
+    var buffer = "";
 
-socket.on('data', function(data) {
-    buffer += data.toString('utf8');
+    socket.on('data', function(data) {
+        buffer += data.toString('utf8');
 
-    var lastNL = buffer.lastIndexOf('\n');
-    if(lastNL !== -1) {
-        var recvdLines = buffer.substr(0, lastNL).split('\n');
-        buffer = buffer.substr(lastNL + 1);
+        var lastNL = buffer.lastIndexOf('\n');
+        if(lastNL !== -2) {
+            var recvdLines = buffer.substr(0, lastNL).split('\n');
+            buffer = buffer.substr(lastNL + 1);
 
-        for(var i = 0; i < recvdLines.length; i++) {
-            var msg = JSON.parse(recvdLines[i]);
+            for(var i = 0; i < recvdLines.length; i++) {
+                var msg = JSON.parse(recvdLines[i]);
 
-            var msgChanLongName = msg.server + ':' + msg.chan;
-            msgChanLongName = msgChanLongName.toLowerCase();
+                var msgChanLongName = msg.server + ':' + msg.chan;
+                msgChanLongName = msgChanLongName.toLowerCase();
 
-            var chanLongName = server + ':' + chan;
-            chanLongName = chanLongName.toLowerCase();
+                var chanLongName = server + ':' + chan;
+                chanLongName = chanLongName.toLowerCase();
 
-            // is the message on the active channel?
-            if(msg.broadcast || chanLongName === msgChanLongName) {
-                // store nicklist
-                if(msg.cmd === 'nicklist') {
-                    for(var j = 0; j < msg.nicks.length; j++) {
-                        nicks[msg.nicks[j]] = true;
-                    }
-                    updateCompletions();
-                } else if (msg.cmd === 'searchResults') {
-                    if(msg.type === 'urllist') {
-                        printLine({
-                            nick: '***',
-                            message: 'URL ' + msg.id + ':' + msg.message
-                        });
-                        readline.redraw();
-                    } else if(msg.type === 'openurl') {
-                        var child = spawn('chromium', [msg.message], {
-                            detached: true,
-                            stdio: [ 'ignore', 'ignore' , 'ignore' ]
-                        });
-                        child.unref();
-                        printLine({
-                            nick: '***',
-                            message: 'URL opened:' + msg.message
-                        });
-                        readline.redraw();
-                    }
-                } else {
-                    printLine(msg);
-                    readline.redraw();
-
-                    if(msg.cmd === 'join') {
-                        nicks[msg.nick] = true;
+                // is the message on the active channel?
+                if(msg.broadcast || chanLongName === msgChanLongName) {
+                    // store nicklist
+                    if(msg.cmd === 'nicklist') {
+                        for(var j = 0; j < msg.nicks.length; j++) {
+                            nicks[msg.nicks[j]] = true;
+                        }
                         updateCompletions();
-                    } else if(msg.cmd === 'part') {
-                        delete(nicks[msg.nick]);
-                        updateCompletions();
+                    } else if (msg.cmd === 'searchResults') {
+                        if(msg.type === 'urllist') {
+                            printLine({
+                                nick: '***',
+                                message: 'URL ' + msg.id + ':' + msg.message
+                            });
+                            readline.redraw();
+                        } else if(msg.type === 'openurl') {
+                            var child = spawn('chromium', [msg.message], {
+                                detached: true,
+                                stdio: [ 'ignore', 'ignore' , 'ignore' ]
+                            });
+                            child.unref();
+                            printLine({
+                                nick: '***',
+                                message: 'URL opened:' + msg.message
+                            });
+                            readline.redraw();
+                        }
+                    } else {
+                        printLine(msg);
+                        readline.redraw();
+
+                        if(msg.cmd === 'join') {
+                            nicks[msg.nick] = true;
+                            updateCompletions();
+                        } else if(msg.cmd === 'part') {
+                            delete(nicks[msg.nick]);
+                            updateCompletions();
+                        }
                     }
                 }
             }
         }
-    }
-});
+    });
+
+    socket.on('end', function() {
+        socket.end();
+    });
+    socket.on('close', function() {
+        printLine({
+            cmd: 'message',
+            nick: '!',
+            message: 'lost connection to jsiid, reconnecting...'
+        });
+        setTimeout(connect, 1000);
+    });
+    socket.on('error', function(err) {
+        printLine({
+            cmd: 'message',
+            nick: '!',
+            message: 'socket error: ' + err.code
+        });
+    });
+    socket.on('connect', function() {
+        redraw();
+    });
+};
+
 
 // handle terminal resize
 process.stdout.on('resize', function() {
@@ -425,6 +432,5 @@ readline = vimrl(prompt, function(line) {
     sendMsg(msg);
 });
 
+connect();
 readline.gotoInsertMode();
-
-redraw();
