@@ -398,38 +398,6 @@ readline = vimrl(prompt, function(line) {
         });
 
         return;
-        /*
-        var current = 0;
-        var splitFile = backlog.split('\n');
-
-        var url;
-        for (var i = splitFile.length - 1; i >= 0; i--) {
-            // TODO: put this mess into a function
-            // remove timestamps
-            splitFile[i] = splitFile[i].replace(/^([^ ]+ ){2}/, '');
-            var words = splitFile[i].split(' ');
-            // nick is first whitespace separated word after timestamp
-            var nick = words[0].substring(1, words[0].length - 1);
-            // ignore select bots
-            if(config.url_ignore_nicks.indexOf(nick) !== -1)
-                continue;
-
-            for (var j = words.length - 1; j >= 0; j--) {
-                var res = config.url_re.exec(words[j]);
-                if(res) {
-                    url = res[0];
-                    printLine({
-                        nick: '***',
-                        msg: 'URL ' + current + ': ' + url
-                    });
-                    readline.redraw();
-                    current++;
-                }
-            }
-        }
-
-        return;
-        */
     } else if (line === '/u' || line.substring(0, 3) === '/u ') { // open url
         sendMsg({
             cmd: "search",
@@ -443,47 +411,6 @@ readline = vimrl(prompt, function(line) {
         });
 
         return;
-
-        /*
-        var url;
-        for (var i = splitFile.length - 1; i >= 0; i--) {
-            // TODO: put this mess into a function
-            // remove timestamps
-            splitFile[i] = splitFile[i].replace(/^([^ ]+ ){2}/, '');
-            var words = splitFile[i].split(' ');
-            // nick is first whitespace separated word after timestamp
-            var nick = words[0].substring(1, words[0].length - 1);
-            // ignore select bots
-            if(config.url_ignore_nicks.indexOf(nick) !== -1)
-                continue;
-
-            for (var j = words.length - 1; j >= 0; j--) {
-                var res = config.url_re.exec(words[j]);
-                if(res) {
-                    if(skip > 0) {
-                        skip--;
-                        continue;
-                    }
-                    url = res[0];
-                    break;
-                }
-            }
-
-            if(url)
-                break;
-        }
-
-        if(url) {
-        } else {
-            printLine({
-                nick: '***',
-                msg: 'No URL found'
-            });
-            readline.redraw();
-        }
-
-        return;
-        */
     }
 
     // send input line to jsiid
@@ -494,13 +421,8 @@ readline = vimrl(prompt, function(line) {
         message: line,
         nick: config.myNick
     };
-    sendMsg(msg);
 
-    // print non command messages
-    if(msg.message[0] !== '/') {
-        msg.nick = config.myNick;
-        printLine(msg);
-    }
+    sendMsg(msg);
 });
 
 readline.gotoInsertMode();
