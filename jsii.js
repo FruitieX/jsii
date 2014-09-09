@@ -119,7 +119,7 @@ var printLine = function(msg) {
 
     // support irc ACTION messages
     if(msg.cmd === 'action') {
-        msg.message = msg.nick + ' ' + msg.message.substring(8);
+        msg.message = msg.nick + ' ' + msg.message;
         msg.nick = '*';
         nickColor = config.actionColor;
         textColor = config.actionColor;
@@ -382,17 +382,29 @@ var prompt = config.getPrompt(getChanName(server, chan, chanNumber), chanNumber)
 
 // parse some select commands from input line
 readline = vimrl(prompt, function(line) {
-    if(line === '/bl' || line.substring(0, 4) === '/bl ') { // request backlog
-        line = "/privmsg *backlog " + chan + ' ' + line.substring(4);
-    } else if(line.substring(0, 4) === '/me ') { // irc ACTION message
-        line = "\001ACTION " + line.substring(4);
-    } else if(line === '/names') { // request nick list
+    if(line === '/bl' || line.substring(0, 4) === '/bl ') {
+        // request backlog
+        sendMsg({
+            cmd: "command",
+            message: "PRIVMSG *backlog " + chan + ' ' + line.substring(4)
+        });
+    } else if(line.substring(0, 4) === '/me ') {
+        // irc ACTION message
+        sendMsg({
+            cmd: "action",
+            message: line.substring(4),
+            chan: chan,
+            server: server,
+            nick: config.myNick
+        });
+    } else if(line === '/names') {
+        // request nick list
         printLine({
             cmd: 'nicklist',
             nicks: Object.keys(nicks)
         });
-        return;
-    } else if (line === '/ul') { // list urls in buffer
+    } else if (line === '/ul') {
+        // list urls in buffer
         sendMsg({
             cmd: "search",
             type: "urllist",
@@ -403,9 +415,8 @@ readline = vimrl(prompt, function(line) {
             firstMatchOnly: false,
             onlyMatching: true
         });
-
-        return;
-    } else if (line === '/u' || line.substring(0, 3) === '/u ') { // open url
+    } else if (line === '/u' || line.substring(0, 3) === '/u ') {
+        // open url
         sendMsg({
             cmd: "search",
             type: "openurl",
@@ -416,20 +427,31 @@ readline = vimrl(prompt, function(line) {
             firstMatchOnly: true,
             onlyMatching: true
         });
-
-        return;
+    } else if(line.substring(0, 5) === '/say ') {
+        // say rest of line
+        sendMsg({
+            cmd: "message",
+            message: line.substring(5),
+            chan: chan,
+            server: server,
+            nick: config.myNick
+        });
+    } else if(line[0] === '/') {
+        // irc commands
+        sendMsg({
+            cmd: "command",
+            message: line.substring(1)
+        });
+    } else {
+        // send input line to jsiid
+        sendMsg({
+            cmd: 'message',
+            chan: chan,
+            server: server,
+            message: line,
+            nick: config.myNick
+        });
     }
-
-    // send input line to jsiid
-    var msg = {
-        cmd: 'message',
-        chan: chan,
-        server: server,
-        message: line,
-        nick: config.myNick
-    };
-
-    sendMsg(msg);
 });
 
 connect();
