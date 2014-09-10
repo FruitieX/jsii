@@ -386,6 +386,7 @@ readline = vimrl(prompt, function(line) {
         // request backlog
         sendMsg({
             cmd: "command",
+            server: server,
             message: "PRIVMSG *backlog " + chan + ' ' + line.substring(4)
         });
     } else if(line.substring(0, 4) === '/me ') {
@@ -440,6 +441,7 @@ readline = vimrl(prompt, function(line) {
         // irc commands
         sendMsg({
             cmd: "command",
+            server: server,
             message: line.substring(1)
         });
     } else {
