@@ -1,0 +1,152 @@
+// jsii configuration
+//
+// NOTE that most config.* values are mandatory and jsii won't work if they aren't
+// defined!
+
+var config = {};
+
+/*
+ * General
+ */
+
+config.myNick = "FruitieX"; // for hilights
+
+config.addr = '127.0.0.1'; // address to jsiid
+config.port = '6666'; // port to jsiid
+
+config.favoriteChannels = [
+        { server: 'qnet', chan: '#brlogenshfegle', shortName: 'brlogenshfegle' },
+        { server: 'hut', chan: '#tietokilta', shortName: 'tietokilta' },
+        { server: 'hut', chan: '!YSAXTkychi', shortName: 'kychi' },
+        { server: 'freenode', chan: '#archlinux', shortName: 'archlinux' },
+        { server: 'freenode', chan: '#vim', shortName: 'vim' },
+        { server: 'hut', chan: '!IZHKJTafLAN', shortName: 'taflan' },
+        { server: 'hut', chan: '#taflansmash', shortName: 'taflansmash' },
+        { server: 'hut', chan: '!1S3YGjotiassarit', shortName: 'jotiassarit' },
+        { server: 'hut', chan: '#uap', shortName: 'uap' },
+        { server: 'freenode', chan: '#mopidy', shortName: 'mopidy' },
+        { server: 'qnet', chan: '#sdamarathon', shortName: 'sdamarathon' },
+        { server: 'freenode', chan: '#xonotic', shortName: 'xonotic' },
+        { server: 'freenode', chan: '#xonotic.team', shortName: 'xonotic.team' },
+        { server: 'freenode', chan: '##news', shortName: 'news' },
+        { server: 'hut', chan: '!2R9EIEinon-oma-kanava', shortName: 'einon-oma-kanava' },
+        { server: 'hut', chan: '!7PTM6dhcp14', shortName: 'dhcp14' },
+        { server: 'freenode', chan: '#Reddit', shortName: 'reddit' },
+        { server: 'hut', chan: '!96U7QTFTiK', shortName: 'tf-tik' },
+        { server: 'freenode', chan: '#Cyanogenmod', shortName: 'cyanogenmod' },
+        { server: 'freenode', chan: '#cyanogenmod-dev', shortName: 'cyanogenmod-dev' },
+        { server: 'qnet', chan: '#pb.xonotic', shortName: 'pb.xonotic' },
+        { server: 'hut', chan: '!LNW10LSU', shortName: 'lsu' },
+        { server: 'hut', chan: '!UCR7Kassembly', shortName: 'assembly' },
+        { server: 'freenode', chan: '#herbstluftwm', shortName: 'herbstluftwm' },
+        { server: 'freenode', chan: '#kvm', shortName: 'kvm' },
+        { server: 'hut', chan: '#otaniemi', shortName: 'otaniemi' },
+        { server: 'freenode', chan: '#znc', shortName: 'znc' },
+        { server: 'freenode', chan: '#qemu', shortName: 'qemu' },
+        { server: 'hut', chan: '#phux13', shortName: 'phux13' },
+        { server: 'hut', chan: '#tik12', shortName: 'tik12' },
+        { server: 'hut', chan: '#tik13', shortName: 'tik13' },
+        { server: 'hut', chan: '#urdsgjallar', shortName: 'urdsgjallar' },
+        { server: 'hut', chan: '!56ZRYtriforce', shortName: 'triforce' },
+        { server: 'hut', chan: '#kylalanit', shortName: 'kylalanit' },
+        { server: 'hut', chan: '#graffathon', shortName: 'graffathon' },
+        { server: 'freenode', chan: '#neovim', shortName: 'neovim' },
+        { server: 'freenode', chan: '#truecrypt', shortName: 'truecrypt' },
+        { server: 'freenode', chan: '#btrfs', shortName: 'btrfs' },
+        { server: 'qnet', chan: '#fruittest', shortName: 'fruittest' },
+        { server: 'qnet', chan: '#xdf', shortName: 'xdf' },
+        { server: 'qnet', chan: 'qnet', shortName: 'qnet' },
+        { server: 'freenode', chan: 'freenode', shortName: 'freenode' },
+        { server: 'hut', chan: 'hut', shortName: 'hut' },
+        { server: 'bitlbee', chan: 'bitlbee', shortName: 'bitlbee' },
+        { server: 'bitlbee', chan: "&bitlbee", shortName: 'bitlbee' }
+    ];
+
+config.hilight_re = new RegExp(".*" + config.myNick + ".*", 'i'); // matches count as hilights
+config.urlRE_s = '(^|\\s)((https?:\\/\\/)[\\w-]+(\\.[\\w-]+)+\\.?(:\\d+)?(\\/\\S*)?)'; // matches count as urls
+//config.url_ignore_nicks = [ 'BoWa' ]; // ignore urls by these nicks
+
+// find and replace these characters in others' messages
+// you can still send them since you aren't insane :-)
+config.findAndReplace =
+    [
+        // remove funky ansi characters
+        [ /\x1b[^m]*m/, '' ],
+
+        // 'fix' insane encodings
+        [ /�/g, 'å' ],
+        [ /�/g, 'ä' ],
+        [ /�/g, 'ö' ],
+
+        // tabs -> spaces
+        [/\t/g, '    '],
+
+        // crlf
+        [/\n/g, ' '],
+        [/\r/g, ' ']
+    ];
+
+/*
+ * Appearance
+ */
+
+config.maxNickLen = 12; // limit printed nickname length to this
+config.separatorColor = 239; // color for separator between nick - msg
+config.myNickColor = 1; // color of your nick and lines by you
+config.hilightColor = 3; // color of hilights
+config.actionColor = 10; // color of /me nonsense
+config.nickSeparator = ' : ';
+config.joinMsg = ' > joined.'
+config.joinColor = 10;
+config.partMsg = ' < left.';
+config.partColor = 1;
+
+/*
+ * Prompt
+ */
+
+config.getPrompt = function(chanShortName, chanNumber) {
+    var i;
+
+    var chanNumberString = '';
+    if(chanNumber === 0 || chanNumber) {
+        chanNumberString = chanNumber + ' ';
+    }
+
+    // my prompt looks like: "42 #channame > here goes text"
+    var normalPrompt = chanNumberString + chanShortName + ' > ';
+    var insertPrompt = chanNumberString + chanShortName + ' > ';
+
+    // config.*PromptColors are arrays containing for each character in
+    // config.*Prompt which ANSI color code should be printed before that
+    // character. This hack was needed because we may need to split the
+    // prompt if a chat message is longer than our terminal is wide.
+    //
+    // In my case, i want the '>' character to change colors, depending on
+    // which vi-mode we are in, here's how to do that:
+
+    var normalPromptColors = [];
+    var insertPromptColors = [];
+
+    // fill arrays with empty strings
+    for (i = 0; i < normalPrompt.length; i++) {
+        normalPromptColors[i] = '';
+    }
+    for (i = 0; i < insertPrompt.length; i++) {
+        insertPromptColors[i] = '';
+    }
+
+    // 2nd last char should be grey
+    normalPromptColors[normalPrompt.length - 2] = '\033[38;5;242m';
+    // 2nd last char should be white
+    insertPromptColors[insertPrompt.length - 2] = '\033[38;5;252m';
+
+    return {
+        normalPrompt: normalPrompt,
+        normalPromptColors: normalPromptColors,
+        insertPrompt: insertPrompt,
+        insertPromptColors: insertPromptColors
+    };
+};
+
+module.exports = config;

@@ -1,30 +1,26 @@
 jsii
 ====
 
-node.js based user interface for the `jsiid` irc client with vim-like keybindings.
-Takes as first argument a server:chan name, channel id or search string.
+node.js based terminal user interface for the `jsiid` irc client with vim-like
+keybindings. Takes as first argument either servername:channelname, channel id
+or search string.
 
 ![Screenshot](/screenshot.png "Yep, it's an irc client.")
 
-Setup (already have ii running / keep it simple)
-------------------------------------------------
+Setup
+-----
 
-1. Fetch dependencies: `$ npm update`
-2. Run: `$ node jsii.js /path/to/#channel`
+1. Install and configure [jsiid](http://github.com/FruitieX/jsiid)
+2. Fetch dependencies: `$ npm update`
+3. `cp jsiiConfig.js.example ~/.jsiiConfig.js`
+4. Edit the configuration file
+5. Chat on irc by running jsii.js:
+   * jsii.js `servername:channelname` - open channelname on servername
+   * jsii.js `42` - open favorite channel number 42
+   * jsii.js `foo` - search & open channel favorites matching foo, eg. "#foobar"
 
-Full setup
-----------
-
-1. [Install ii](http://tools.suckless.org/ii/)
-2. Edit `irc_connect.sh` and run the script. Recommended to autorun it in eg.
-   your `.xinitrc` or using a systemd service.
-3. When you have `ii` running, edit `irc_symlink.sh` with your favorite
-   channels, then run the script.
-4. Fetch dependencies: `$ npm update`
-5. If you changed any of the default paths, edit `i.sh`. Try running the script
-   and see if jsii opens with the first channel visible. If it works you may
-   want to symlink the script to eg. `$PATH/i`
-
-Now you can open your favorite irc channel number 42 with `i 42`. Or search and
-open a channel with `i channame`. Browsing through irc channels is possible
-with `alt + h/l` or `alt + 1-9`
+Tip:
+* Symlink `jsii.js` to `$PATH/i`
+* Now you can run jsii just by doing eg. `i 42`, `i channame`
+* Browsing through favorite channels is possible with `alt + h/l` or
+  `alt + 1-9`
