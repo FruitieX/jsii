@@ -2,6 +2,7 @@
 var spawn = require('child_process').spawn;
 var vimrl = require('vimrl');
 var net = require('net');
+var crypto = require('crypto');
 
 var config = require(process.env.HOME + "/.jsiiConfig.js");
 
@@ -144,11 +145,9 @@ var printLine = function(msg) {
             textColor = config.myNickColor;
         } else {
             // nick color, avoids dark colors
-            for(i = 0; i < msg.nick.length; i++) {
-                nickColor += msg.nick.charCodeAt(i);
-            }
-            nickColor = Math.pow(nickColor, 2) + nickColor * 2;
-            nickColor = nickColor % 255;
+            var md5sum = crypto.createHash('md5');
+            md5sum.update(msg.nick, 'utf8');
+            nickColor = parseInt(md5sum.digest('hex'), 16) % 255;
             switch(nickColor) {
                 case 18: case 22: case 23: case 24:
                     nickColor += 3; break;
