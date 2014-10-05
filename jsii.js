@@ -262,9 +262,10 @@ process.stdin.on('readable', function() {
             redraw();
         }
         // jump to this channel (alt + 1-9)
-        else if(keyHex.substring(0, 3) === '1b3') {
+        else if(keyHex.substring(0, 3) === '1b3' && !isNaN(keyHex[3])) {
             chanNumber = parseInt(keyHex.substring(3));
 
+            console.log(keyHex.toString('hex'));
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
             nicks = {};
@@ -272,6 +273,11 @@ process.stdin.on('readable', function() {
             readline.changePrompt(config.getPrompt(
                         getChanName(server, chan, chanNumber), chanNumber));
             redraw();
+        }
+        // plenty of weird alt combos start with 1b, ignore them or we risk
+        // breaking the terminal
+        else if(keyHex.substring(0, 2) === '1b') {
+            // do nothing
         } else {
             readline.handleInput(input);
         }
