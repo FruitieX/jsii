@@ -245,6 +245,7 @@ process.stdin.on('readable', function() {
                         getChanName(server, chan, chanNumber), chanNumber));
             redraw();
         }
+
         // next channel (alt + l)
         else if(keyHex === '1b6c') {
             if(isNaN(chanNumber)) chanNumber = 0;
@@ -261,6 +262,7 @@ process.stdin.on('readable', function() {
                         getChanName(server, chan, chanNumber), chanNumber));
             redraw();
         }
+
         // jump to this channel (alt + 1-9)
         else if(keyHex.substring(0, 3) === '1b3' && !isNaN(keyHex[3])) {
             chanNumber = parseInt(keyHex.substring(3));
@@ -273,10 +275,8 @@ process.stdin.on('readable', function() {
                         getChanName(server, chan, chanNumber), chanNumber));
             redraw();
         }
-        // plenty of weird alt combos start with 1b, ignore them or we risk
-        // breaking the terminal
-        else if(keyHex.substring(0, 2) === '1b') {
-            // do nothing
+
+        // else let vimrl handle
         } else {
             readline.handleInput(input);
         }
