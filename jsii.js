@@ -277,7 +277,7 @@ process.stdin.on('readable', function() {
         }
 
         // else let vimrl handle
-        } else {
+        else {
             readline.handleInput(input);
         }
 
