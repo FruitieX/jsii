@@ -262,7 +262,7 @@ process.stdin.on('readable', function() {
             redraw();
         }
         // jump to this channel (alt + 1-9)
-        else if(keyHex.substring(0, 3) === '1b3' && keyHex.substring(3) !== '0') {
+        else if(keyHex.substring(0, 3) === '1b3') {
             chanNumber = parseInt(keyHex.substring(3));
 
             server = config.favoriteChannels[chanNumber].server;
@@ -277,7 +277,7 @@ process.stdin.on('readable', function() {
         }
 
         // DEBUG: uncomment this line to find the keycodes
-        //console.log(key.toString('hex'));
+        //console.log(keyHex.toString('hex'));
     }
 });
 
