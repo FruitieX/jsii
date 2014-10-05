@@ -265,7 +265,6 @@ process.stdin.on('readable', function() {
         else if(keyHex.substring(0, 3) === '1b3' && !isNaN(keyHex[3])) {
             chanNumber = parseInt(keyHex.substring(3));
 
-            console.log(keyHex.toString('hex'));
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
             nicks = {};
