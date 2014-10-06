@@ -118,10 +118,12 @@ var printLine = function(msg) {
     var nickColor = 0;
     var textColor = 15;
 
+    var nick = msg.nick
+
     // support irc ACTION messages
     if(msg.cmd === 'action') {
-        msg.message = msg.nick + ' ' + msg.message;
-        msg.nick = '*';
+        msg.message = nick + ' ' + msg.message;
+        nick = '*';
         nickColor = config.actionColor;
         textColor = config.actionColor;
     } else if (msg.cmd === 'join') {
@@ -133,20 +135,20 @@ var printLine = function(msg) {
         msg.message = config.partMsg;
         textColor = config.partColor;
     } else if (msg.cmd === 'nicklist') {
-        msg.nick = '*';
+        nick = '*';
         msg.message = 'Names: ' + msg.nicks.join(', ');
     } else if(msg.message.match(config.hilight_re)) {
         textColor = config.hilightColor;
     }
 
-    if (msg.nick) {
-        if(msg.nick === config.myNick) {
+    if (nick) {
+        if(nick === config.myNick) {
             nickColor = config.myNickColor;
             textColor = config.myNickColor;
         } else {
             // nick color, avoids dark colors
             var md5sum = crypto.createHash('md5');
-            md5sum.update(msg.nick, 'utf8');
+            md5sum.update(nick, 'utf8');
             nickColor = parseInt(md5sum.digest('hex'), 16) % 255;
             switch(nickColor) {
                 case 18: case 22: case 23: case 24:
@@ -162,10 +164,10 @@ var printLine = function(msg) {
     }
 
     // limit nicklen
-    msg.nick = msg.nick.substr(0, config.maxNickLen);
+    nick = nick.substr(0, config.maxNickLen);
     // align nicks and print
-    process.stdout.write(Array(config.maxNickLen - msg.nick.length + 1).join(' '));
-    process.stdout.write('\033[38;5;' + nickColor + 'm' + msg.nick + // set nick color + nick
+    process.stdout.write(Array(config.maxNickLen - nick.length + 1).join(' '));
+    process.stdout.write('\033[38;5;' + nickColor + 'm' + nick + // set nick color + nick
                          '\033[38;5;' + config.separatorColor + 'm' + separator + // set separator color + separator
                          '\033[000m'); // reset colors
 
