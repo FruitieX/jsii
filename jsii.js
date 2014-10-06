@@ -8,7 +8,7 @@ var config = require(process.env.HOME + "/.jsiiConfig.js");
 
 var nicks = {};
 
-var chanNumber, server, chan;
+var chanNumber, server, chan, hideJoinsParts;
 
 var updateCompletions = function() {
     var nicksArray = Object.keys(nicks);
@@ -58,14 +58,16 @@ var findChannel = function(searchString) {
 /* find server & channels names from first argument */
 // no args: pick first favorite chan
 if(!process.argv[2]) {
+    chanNumber = 0;
     server = config.favoriteChannels[0].server;
     chan = config.favoriteChannels[0].chan;
-    chanNumber = 0;
+    hideJoinsParts = config.favoriteChannels[0].hideJoinsParts;
 // by channel number
 } else if (!isNaN(process.argv[2])) {
     chanNumber = parseInt(process.argv[2]);
     server = config.favoriteChannels[chanNumber].server;
     chan = config.favoriteChannels[chanNumber].chan;
+    hideJoinsParts = config.favoriteChannels[chanNumber].hideJoinsParts;
 // else search
 } else {
     var results = findChannel(process.argv[2]);
@@ -74,6 +76,7 @@ if(!process.argv[2]) {
         server = results.server;
         chan = results.chan;
         chanNumber = results.chanNumber;
+        hideJoinsParts = results.hideJoinsParts;
     } else {
         console.log("No results with given search terms!");
         process.exit(1);
@@ -127,10 +130,14 @@ var printLine = function(msg) {
         nickColor = config.actionColor;
         textColor = config.actionColor;
     } else if (msg.cmd === 'join') {
+        if(hideJoinsParts)
+            return;
         separator = '';
         msg.message = config.joinMsg;
         textColor = config.joinColor;
     } else if (msg.cmd === 'part') {
+        if(hideJoinsParts)
+            return;
         separator = '';
         msg.message = config.partMsg;
         textColor = config.partColor;
@@ -241,6 +248,7 @@ process.stdin.on('readable', function() {
 
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
+            hideJoinsParts = config.favoriteChannels[chanNumber].hideJoinsParts;
             nicks = {};
 
             readline.changePrompt(config.getPrompt(
@@ -258,6 +266,7 @@ process.stdin.on('readable', function() {
 
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
+            hideJoinsParts = config.favoriteChannels[chanNumber].hideJoinsParts;
             nicks = {};
 
             readline.changePrompt(config.getPrompt(
@@ -271,6 +280,7 @@ process.stdin.on('readable', function() {
 
             server = config.favoriteChannels[chanNumber].server;
             chan = config.favoriteChannels[chanNumber].chan;
+            hideJoinsParts = config.favoriteChannels[chanNumber].hideJoinsParts;
             nicks = {};
 
             readline.changePrompt(config.getPrompt(
