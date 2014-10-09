@@ -238,8 +238,8 @@ process.stdin.on('readable', function() {
 
         var keyHex = input.toString('hex');
 
-        // previous channel (alt + h) || (alt + p)
-        if(keyHex === '1b68' || keyHex === '1b70') {
+        // previous channel (alt + h) || (ctrl + p)
+        if(keyHex === '1b68' || keyHex === '10') {
             if(isNaN(chanNumber)) chanNumber = 0;
             else chanNumber--;
 
@@ -256,8 +256,8 @@ process.stdin.on('readable', function() {
             redraw();
         }
 
-        // next channel (alt + l) || (alt + n)
-        else if(keyHex === '1b6c' || keyHex === '1b6e') {
+        // next channel (alt + l) || (ctrl + n)
+        else if(keyHex === '1b6c' || keyHex === '0e') {
             if(isNaN(chanNumber)) chanNumber = 0;
             else chanNumber++;
 
@@ -294,7 +294,7 @@ process.stdin.on('readable', function() {
         }
 
         // DEBUG: uncomment this line to find the keycodes
-        console.log(keyHex.toString('hex'));
+        //console.log(keyHex.toString('hex'));
     }
 });
 
