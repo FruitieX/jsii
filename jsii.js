@@ -232,13 +232,16 @@ process.stdin.setRawMode(true);
 process.stdin.on('readable', function() {
     var input;
     while (null !== (input = process.stdin.read())) {
-        // 'ctrl-c' = quit
-        if(input == '\u0003') process.exit(0);
-
         var keyHex = input.toString('hex');
 
+        // ctrl + c, ctrl + q = quit
+        if(keyHex === '03' || keyHex === '11') {
+            process.stdout.write('\u001B[2J\u001B[0;0f'); // clear terminal
+            process.exit(0);
+        }
+
         // previous channel (alt + h) || (ctrl + p)
-        if(keyHex === '1b68' || keyHex === '10') {
+        else if(keyHex === '1b68' || keyHex === '10') {
             if(isNaN(chanNumber)) chanNumber = 0;
             else chanNumber--;
 
