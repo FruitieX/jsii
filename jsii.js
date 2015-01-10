@@ -339,7 +339,7 @@ var connect = function() {
                             });
                             readline.redraw();
                         } else if(msg.type === 'openurl') {
-                            var child = spawn('chromium', [msg.message], {
+                            var child = spawn('firefox', [msg.message], {
                                 detached: true,
                                 stdio: [ 'ignore', 'ignore' , 'ignore' ]
                             });
