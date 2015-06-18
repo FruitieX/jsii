@@ -122,6 +122,10 @@ var printLine = function(msg) {
 
     var nick = msg.nick
 
+    if (config.ignore.indexOf(nick) !== -1) {
+        return;
+    }
+
     // support irc ACTION messages
     if(msg.cmd === 'action') {
         msg.message = nick + ' ' + msg.message;
